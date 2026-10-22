@@ -190,3 +190,18 @@ form.addEventListener("submit",async event=>{
 </script>
 </body>
 </html>
+  <!-- Your existing website code stays here -->
+
+  <script type="module">
+    import { auth } from "./firebase-config.js";
+    import { onAuthStateChanged } from
+      "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        location.replace("login.html");
+      }
+    });
+  </script>
+</body>
+</html>
