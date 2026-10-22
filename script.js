@@ -1,15 +1,32 @@
 
-/* 1. SETTINGS AND SAMPLE PRODUCTS */
-const STORAGE_KEY = "shambamarket-products-v1";
+/* SHAMBAMARKET: Marketplace with real food photos */
+
+const STORAGE_KEY = "shambamarket-products-v2";
 
 const categoryInfo = {
-  fruit: { label: "Fruit", icon: "🍎" },
-  vegetable: { label: "Vegetable", icon: "🥬" },
-  grain: { label: "Grain & cereal", icon: "🌽" },
-  starchy: { label: "Starchy food", icon: "🥔" },
-  spice: { label: "Spice & herb", icon: "🌿" }
+  fruit: {
+    label: "Fruits",
+    image: "https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80"
+  },
+  vegetable: {
+    label: "Vegetables",
+    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80"
+  },
+  grain: {
+    label: "Grains & cereals",
+    image: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=800&q=80"
+  },
+  starchy: {
+    label: "Starchy foods",
+    image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=800&q=80"
+  },
+  spice: {
+    label: "Spices & herbs",
+    image: "https://images.unsplash.com/photo-1615485500704-8e990f9900f2?auto=format&fit=crop&w=800&q=80"
+  }
 };
 
+/* SAMPLE PRODUCTS: demo prices and contacts */
 const sampleProducts = [
   {
     name: "Fresh Mangoes",
@@ -17,43 +34,42 @@ const sampleProducts = [
     county: "Makueni",
     quantity: 50,
     price: 80,
-    contact: "Demo contact"
+    contact: ""
   },
   {
-    name: "Fresh Tomatoes",
+    name: "Fresh Vegetables",
     type: "vegetable",
     county: "Nakuru",
     quantity: 30,
     price: 100,
-    contact: "Demo contact"
+    contact: ""
   },
   {
-    name: "Dry Maize",
+    name: "Maize",
     type: "grain",
     county: "Trans Nzoia",
     quantity: 100,
     price: 55,
-    contact: "Demo contact"
+    contact: ""
   },
   {
-    name: "Sweet Potatoes",
+    name: "Potatoes",
     type: "starchy",
-    county: "Kisumu",
+    county: "Nyandarua",
     quantity: 40,
     price: 65,
-    contact: "Demo contact"
+    contact: ""
   },
   {
-    name: "Fresh Coriander",
+    name: "Fresh Herbs",
     type: "spice",
     county: "Kiambu",
     quantity: 20,
     price: 40,
-    contact: "Demo contact"
+    contact: ""
   }
 ];
 
-/* 2. CONNECT TO THE HTML ELEMENTS */
 const productList = document.getElementById("product-list");
 const searchInput = document.getElementById("search");
 const categoryInput = document.getElementById("category");
@@ -62,20 +78,16 @@ const resultCount = document.getElementById("result-count");
 const emptyState = document.getElementById("empty-state");
 const message = document.getElementById("message");
 
-/* 3. LOAD PRODUCTS SAVED IN THIS BROWSER */
+/* Load products saved in this browser */
 function loadProducts() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-
     if (saved !== null) {
-      const parsed = JSON.parse(saved);
-
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
+      const data = JSON.parse(saved);
+      if (Array.isArray(data)) return data;
     }
   } catch (error) {
-    console.warn("Saved listings could not be loaded.");
+    console.warn("Could not load saved products.");
   }
 
   return sampleProducts.map(product => ({ ...product }));
@@ -83,7 +95,7 @@ function loadProducts() {
 
 let products = loadProducts();
 
-/* 4. SAVE PRODUCTS IN THIS BROWSER */
+/* Save listings in this browser */
 function saveProducts() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
@@ -93,79 +105,103 @@ function saveProducts() {
   }
 }
 
-/* 5. DISPLAY AND FILTER PRODUCT CARDS */
+/* Create a safe text element */
+function addText(parent, tag, className, text) {
+  const element = document.createElement(tag);
+  element.className = className;
+  element.textContent = text;
+  parent.appendChild(element);
+  return element;
+}
+
+/* Display product photos and information */
 function displayProducts() {
-  const searchTerm = searchInput.value.toLowerCase().trim();
-  const selectedCategory = categoryInput.value;
+  const term = searchInput.value.toLowerCase().trim();
+  const selected = categoryInput.value;
 
-  const filteredProducts = products.filter(product => {
-    const searchableText =
-      `${product.name} ${product.county}`.toLowerCase();
-
-    const matchesSearch = searchableText.includes(searchTerm);
-
-    const matchesCategory =
-      selectedCategory === "all" ||
-      product.type === selectedCategory;
-
-    return matchesSearch && matchesCategory;
+  const matches = products.filter(product => {
+    const text = `${product.name} ${product.county}`.toLowerCase();
+    return text.includes(term) &&
+      (selected === "all" || product.type === selected);
   });
 
   productList.replaceChildren();
-
   resultCount.textContent =
-    `${filteredProducts.length} ${
-      filteredProducts.length === 1 ? "product" : "products"
-    }`;
+    `${matches.length} ${matches.length === 1 ? "product" : "products"}`;
+  emptyState.hidden = matches.length !== 0;
 
-  emptyState.hidden = filteredProducts.length > 0;
-
-  filteredProducts.forEach(product => {
+  matches.forEach(product => {
     const card = document.createElement("article");
     card.className = "product-card";
 
-    const icon = document.createElement("div");
-    icon.className = "product-icon";
-    icon.textContent =
-      categoryInfo[product.type]?.icon || "🌱";
-    icon.setAttribute("aria-hidden", "true");
+    const category = categoryInfo[product.type] || categoryInfo.fruit;
 
-    const title = document.createElement("h3");
-    title.textContent = product.name;
+    /* Product photograph */
+    const photo = document.createElement("img");
+    photo.className = "product-photo";
+    photo.src = product.image || category.image;
+    photo.alt = product.name;
+    photo.loading = "lazy";
 
-    const category = document.createElement("p");
-    category.textContent =
-      categoryInfo[product.type]?.label || "Produce";
+    /* Show a fallback image if a photo cannot load */
+    photo.onerror = function() {
+      if (photo.dataset.fallback !== "used") {
+        photo.dataset.fallback = "used";
+        photo.src = category.image;
+      }
+    };
 
-    const location = document.createElement("p");
-    location.textContent = `📍 ${product.county} County`;
+    card.appendChild(photo);
 
-    const quantity = document.createElement("p");
-    quantity.textContent = `${product.quantity} kg available`;
+    addText(card, "span", "product-category", category.label);
+    addText(card, "h3", "product-name", product.name);
+    addText(card, "p", "product-location", `📍 ${product.county} County`);
+    addText(card, "p", "product-quantity", `${product.quantity} kg available`);
+    addText(
+      card,
+      "p",
+      "product-price",
+      `KSh ${Number(product.price).toLocaleString("en-KE")} / kg`
+    );
 
-    const price = document.createElement("div");
-    price.className = "product-price";
-    price.textContent =
-      `KSh ${Number(product.price).toLocaleString("en-KE")} / kg`;
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "View product details";
+    details.appendChild(summary);
 
-    const contact = document.createElement("p");
-    contact.className = "contact-line";
-    contact.textContent = `☎ Farmer: ${product.contact}`;
+    addText(details, "p", "", `Category: ${category.label}`);
+    addText(details, "p", "", `County: ${product.county}`);
+    addText(details, "p", "", `Available: ${product.quantity} kg`);
 
-    card.append(icon, title, category, location, quantity, price, contact);
+    if (product.contact) {
+      addText(details, "p", "", `Farmer contact: ${product.contact}`);
+
+      const phone = product.contact.replace(/[^\d+]/g, "");
+      if (/^\+?\d{9,15}$/.test(phone)) {
+        const call = document.createElement("a");
+        call.className = "contact-button";
+        call.href = `tel:${phone}`;
+        call.textContent = "☎ Contact Farmer";
+        details.appendChild(call);
+      }
+    } else {
+      addText(details, "p", "demo-note", "Demo listing — no verified farmer contact.");
+    }
+
+    card.appendChild(details);
     productList.appendChild(card);
   });
 }
 
-/* 6. SEARCH AND CATEGORY FILTERS */
+/* Search and category controls */
 searchInput.addEventListener("input", displayProducts);
 categoryInput.addEventListener("change", displayProducts);
 
-/* 7. ADD A NEW FARMER LISTING */
-productForm.addEventListener("submit", function(event) {
+/* Add a product from the farmer form */
+productForm.addEventListener("submit", event => {
   event.preventDefault();
 
-  const newProduct = {
+  const product = {
     name: document.getElementById("name").value.trim(),
     type: document.getElementById("type").value,
     county: document.getElementById("county").value.trim(),
@@ -175,38 +211,34 @@ productForm.addEventListener("submit", function(event) {
   };
 
   if (
-    !newProduct.name ||
-    !newProduct.county ||
-    !newProduct.contact ||
-    !categoryInfo[newProduct.type] ||
-    !Number.isFinite(newProduct.quantity) ||
-    !Number.isFinite(newProduct.price) ||
-    newProduct.quantity <= 0 ||
-    newProduct.price <= 0
+    !product.name ||
+    !product.county ||
+    !categoryInfo[product.type] ||
+    !Number.isFinite(product.quantity) ||
+    !Number.isFinite(product.price) ||
+    product.quantity <= 0 ||
+    product.price <= 0
   ) {
-    message.textContent =
-      "Please enter valid details in every field.";
+    message.textContent = "Please check all your product details.";
     return;
   }
 
-  products.unshift(newProduct);
-
+  products.unshift(product);
   const saved = saveProducts();
 
   productForm.reset();
   searchInput.value = "";
   categoryInput.value = "all";
-
   displayProducts();
 
   message.textContent = saved
-    ? "✓ Product added! It is saved in this browser."
-    : "Product added for this session, but could not be saved.";
+    ? "Product added successfully!"
+    : "Added for this session, but saving failed.";
 
   document.getElementById("market").scrollIntoView({
     behavior: "smooth"
   });
 });
 
-/* 8. START THE MARKETPLACE */
+/* Start the marketplace */
 displayProducts();
