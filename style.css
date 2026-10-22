@@ -1,32 +1,135 @@
 
+/* FUNCTION 1: Main website theme */
+:root {
+  --olive: #556b2f;
+  --light-olive: #edf2e5;
+  --white: #ffffff;
+  --text: #263121;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #f7f9f2;
-  color: #26351e;
-  text-align: center;
+  background: var(--light-olive);
+  color: var(--text);
+  line-height: 1.6;
 }
 
+/* FUNCTION 2: Header */
 header {
-  background-color: #536b35;
-  color: white;
-  padding: 25px;
+  background: var(--olive);
+  color: var(--white);
+  text-align: center;
+  padding: 28px 16px;
 }
 
+header h1 {
+  margin: 0;
+}
+
+/* FUNCTION 3: Navigation menu */
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 15px;
+  background: var(--white);
+}
+
+nav a {
+  color: var(--olive);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* FUNCTION 4: Main sections */
 main {
-  padding: 40px 20px;
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+section {
+  margin: 24px 0;
+  padding: 22px;
+  background: var(--white);
+  border-radius: 12px;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 12px;
+  margin: 7px 0 14px;
+  font: inherit;
+  border: 1px solid #b8c2ad;
+  border-radius: 7px;
 }
 
 button {
-  background-color: #536b35;
-  color: white;
-  padding: 14px 24px;
+  background: var(--olive);
+  color: var(--white);
   border: none;
-  border-radius: 10px;
   cursor: pointer;
-  font-size: 16px;
+  font-weight: bold;
 }
 
 button:hover {
-  background-color: #3d5027;
+  background: #3e5120;
+}
+
+/* FUNCTION 5: Product cards */
+.products {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit, minmax(220px, 1fr)
+  );
+  gap: 16px;
+}
+
+.product-card {
+  border: 1px solid #dce3d3;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fbfcf8;
+}
+
+.product-card h3 {
+  color: var(--olive);
+  margin-top: 0;
+}
+
+.product-card p {
+  overflow-wrap: anywhere;
+}
+
+/* FUNCTION 6: Footer */
+footer {
+  background: var(--olive);
+  color: var(--white);
+  text-align: center;
+  padding: 16px;
+}
+
+/* FUNCTION 7: Smaller screens */
+@media (max-width: 600px) {
+  main {
+    padding: 10px;
+  }
+
+  section {
+    padding: 15px;
+  }
+
+  nav {
+    gap: 12px;
+  }
 }
