@@ -1,1 +1,294 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHAMBAMARKET | From Shamba to Soko</title>
+  <meta name="description" content="Connect Kenyan farmers directly with buyers.">
+  <link rel="stylesheet" href="design.css">
+  <link rel="stylesheet" href="soko.css">
+  <link rel="stylesheet" href="shamba.css">
+  <link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" onclick="showPage('soko'); return false;">
+      <span class="brand-icon">🌱</span>
+      <span>SHAMBA<span class="brand-dark">MARKET</span>
+        <small>From Shamba to Soko</small>
+      </span>
+    </a>
+
+    <nav class="main-nav">
+      <button class="nav-link active" data-page="soko" onclick="showPage('soko')">Soko</button>
+      <button class="nav-link" data-page="shamba" onclick="showPage('shamba')">Shamba</button>
+      <button class="nav-link" data-page="messages" onclick="showPage('messages')">Messages</button>
+      <button class="nav-link" data-page="orders" onclick="showPage('orders')">Orders</button>
+    </nav>
+
+    <div class="header-actions">
+      <button class="icon-button" onclick="toggleTheme()" title="Change theme">☼</button>
+      <button class="primary-button" onclick="showPage('login')">Log in</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- MAIN PAGE 1: SOKO MARKETPLACE -->
+    <section id="soko-page" class="page active-page">
+      <section class="hero">
+        <div class="hero-content">
+          <span class="eyebrow">🇰🇪 MADE FOR KENYAN FARMERS</span>
+          <h1>From your <span>shamba</span><br>straight to the soko.</h1>
+          <p>Discover fresh farm produce and connect directly with the people who grow it.</p>
+          <button class="primary-button large-button" onclick="showPage('shamba')">
+            Sell your produce →
+          </button>
+        </div>
+        <div class="hero-art">
+          <div class="hero-emoji">🥑 🍅 🌽</div>
+          <span>Fresh from the farm</span>
+        </div>
+      </section>
+
+      <section class="market-section">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">EXPLORE THE MARKET</span>
+            <h2>Find farm produce</h2>
+            <p>Browse what farmers are selling.</p>
+          </div>
+          <span id="product-count" class="muted">0 products</span>
+        </div>
+
+        <div class="search-row">
+          <input id="search-input" type="search"
+            placeholder="Search mangoes, maize, potatoes..."
+            aria-label="Search products">
+          <select id="county-filter" aria-label="Filter by county">
+            <option value="">All counties</option>
+            <option>Nairobi</option>
+            <option>Nakuru</option>
+            <option>Kiambu</option>
+            <option>Meru</option>
+            <option>Uasin Gishu</option>
+            <option>Kisumu</option>
+            <option>Nyeri</option>
+            <option>Machakos</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div id="category-list" class="category-list"></div>
+        <div id="product-list" class="product-grid"></div>
+        <p id="empty-products" class="empty-state" hidden>
+          No products found. Try another search or category.
+        </p>
+      </section>
+    </section>
+
+    <!-- MAIN PAGE 2: SHAMBA FARMER DASHBOARD -->
+    <section id="shamba-page" class="page">
+      <div class="dashboard-heading">
+        <div>
+          <span class="eyebrow">YOUR FARM BUSINESS</span>
+          <h1>Karibu Shamba 🌿</h1>
+          <p>Manage your produce and reach more buyers.</p>
+        </div>
+        <span class="farmer-tag">Farmer dashboard</span>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span>My listings</span>
+          <strong id="my-listing-count">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Categories</span>
+          <strong id="category-count">9</strong>
+        </article>
+        <article class="stat-card">
+          <span>My orders</span>
+          <strong id="my-order-count">0</strong>
+        </article>
+      </div>
+
+      <div class="farmer-layout">
+        <section class="panel listing-panel">
+          <h2>Add a product</h2>
+          <p class="muted">Share what you have available for buyers.</p>
+
+          <form id="product-form">
+            <label for="product-name">Product name</label>
+            <input id="product-name" required maxlength="70"
+              placeholder="e.g. Fresh mangoes">
+
+            <label for="product-category">Category</label>
+            <select id="product-category" required></select>
+
+            <label for="product-condition">Condition</label>
+            <select id="product-condition" required>
+              <option value="Fresh">Fresh</option>
+              <option value="Dried">Dried</option>
+              <option value="Processed">Processed</option>
+            </select>
+
+            <div class="form-two">
+              <div>
+                <label for="product-county">County</label>
+                <select id="product-county" required>
+                  <option value="">Choose county</option>
+                  <option>Nairobi</option>
+                  <option>Nakuru</option>
+                  <option>Kiambu</option>
+                  <option>Meru</option>
+                  <option>Uasin Gishu</option>
+                  <option>Kisumu</option>
+                  <option>Nyeri</option>
+                  <option>Machakos</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label for="product-town">Town or area</label>
+                <input id="product-town" required placeholder="e.g. Naivasha">
+              </div>
+            </div>
+
+            <div class="form-two">
+              <div>
+                <label for="product-quantity">Quantity (kg)</label>
+                <input id="product-quantity" type="number" min="1"
+                  step="0.1" required placeholder="e.g. 100">
+              </div>
+              <div>
+                <label for="product-price">Price per kg (KSh)</label>
+                <input id="product-price" type="number" min="0"
+                  step="0.01" required placeholder="e.g. 50">
+              </div>
+            </div>
+
+            <label for="farmer-name">Farmer or business name</label>
+            <input id="farmer-name" required placeholder="Your name or farm name">
+
+            <label for="farmer-phone">Contact phone</label>
+            <input id="farmer-phone" type="tel" required
+              placeholder="e.g. 07XX XXX XXX">
+
+            <label for="product-photo">Product photo (optional)</label>
+            <input id="product-photo" type="file" accept="image/*">
+
+            <label for="product-description">Description</label>
+            <textarea id="product-description" rows="3" maxlength="500"
+              placeholder="Describe your produce..."></textarea>
+
+            <button type="submit" class="primary-button full-button">
+              + Publish listing
+            </button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading compact-heading">
+            <div>
+              <h2>My listings</h2>
+              <p class="muted">Products you have added.</p>
+            </div>
+          </div>
+          <div id="farmer-listings" class="farmer-listings"></div>
+          <p id="empty-farmer-listings" class="empty-state">
+            You haven't added any products yet.
+          </p>
+        </section>
+      </div>
+    </section>
+
+    <!-- MESSAGES: SUPPORTING FEATURE -->
+    <section id="messages-page" class="page">
+      <div class="simple-page">
+        <span class="eyebrow">BUYER AND FARMER CHAT</span>
+        <h1>Messages 💬</h1>
+        <p>Use this demo to try the messaging interface on this device.</p>
+        <div class="panel message-panel">
+          <div id="message-list" class="message-list">
+            <p class="muted">Your demo conversation will appear here.</p>
+          </div>
+          <form id="message-form" class="message-form">
+            <input id="message-input" required maxlength="1000"
+              placeholder="Write a message...">
+            <button class="primary-button" type="submit">Send</button>
+          </form>
+          <p class="notice">Demo only: messages are stored in this browser and are not encrypted or sent to another user.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORDERS: SUPPORTING FEATURE -->
+    <section id="orders-page" class="page">
+      <div class="simple-page">
+        <span class="eyebrow">PURCHASES AND SALES</span>
+        <h1>Orders 📦</h1>
+        <p>Orders created from product listings will appear here.</p>
+        <div id="orders-list" class="orders-list"></div>
+        <p id="empty-orders" class="empty-state">No orders yet.</p>
+      </div>
+    </section>
+
+    <!-- LOGIN DEMO -->
+    <section id="login-page" class="page">
+      <div class="simple-page login-wrap">
+        <div class="panel login-panel">
+          <span class="eyebrow">WELCOME TO SHAMBAMARKET</span>
+          <h1>Log in</h1>
+          <p class="muted">Try the local demo profile.</p>
+          <form id="login-form">
+            <label for="login-name">Your name</label>
+            <input id="login-name" required placeholder="Enter your name">
+            <label for="login-phone">Phone number</label>
+            <input id="login-phone" type="tel" required placeholder="07XX XXX XXX">
+            <button type="submit" class="primary-button full-button">
+              Continue
+            </button>
+          </form>
+          <p class="notice">Demo only: this is not secure account authentication.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="settings-page" class="page">
+      <div class="simple-page">
+        <span class="eyebrow">MAKE IT YOURS</span>
+        <h1>Settings ⚙️</h1>
+        <div class="panel settings-panel">
+          <h2>Appearance</h2>
+          <button class="secondary-button" onclick="toggleTheme()">
+            Switch light / dark mode
+          </button>
+          <h2>Language</h2>
+          <p class="muted">Full English and Kiswahili translation can be added next.</p>
+          <p class="notice">Your current listings are saved locally in this browser, not in a shared online database.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <strong>SHAMBAMARKET 🇰🇪</strong>
+    <p>From Shamba to Soko · Kutoka shambani hadi sokoni.</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Load scripts in this order because they share functions. -->
+  <script src="navigation.js" defer></script>
+  <script src="products.js" defer></script>
+  <script src="categories.js" defer></script>
+  <script src="farmer.js" defer></script>
+  <script src="messages.js" defer></script>
+  <script src="orders.js" defer></script>
+  <script src="login.js" defer></script>
+  <script src="settings.js" defer></script>
+</body>
+</html>
+
