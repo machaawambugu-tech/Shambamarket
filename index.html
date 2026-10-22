@@ -1,99 +1,435 @@
 
-const sellForm = document.getElementById("sellForm");
-const cropPhoto = document.getElementById("cropPhoto");
-const photoPreview = document.getElementById("photoPreview");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShambaMarket | Fresh from Kenyan Farms</title>
 
-// Preview the farmer's photo before listing it.
-cropPhoto.addEventListener("change", function () {
-  const file = this.files[0];
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-  photoPreview.hidden = true;
-  photoPreview.removeAttribute("src");
+:root {
+  --green: #267544;
+  --dark-green: #153e27;
+  --light: #f3f7ef;
+  --white: #ffffff;
+  --text: #213729;
+}
 
-  if (!file) return;
+body {
+  font-family: Arial, sans-serif;
+  background: var(--light);
+  color: var(--text);
+  line-height: 1.6;
+}
 
-  if (!file.type.startsWith("image/")) {
-    alert("Please choose an image file.");
-    this.value = "";
-    return;
+nav {
+  background: white;
+  padding: 18px 7%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #e0e8dd;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--green);
+}
+
+nav a {
+  text-decoration: none;
+  color: var(--dark-green);
+  font-weight: bold;
+  margin-left: 18px;
+}
+
+.hero {
+  padding: 85px 8%;
+  color: white;
+  background:
+    linear-gradient(90deg, rgba(9,39,20,.9), rgba(9,39,20,.25)),
+    url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=80");
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-content {
+  max-width: 650px;
+}
+
+.tag {
+  background: #dff2df;
+  color: #23663b;
+  display: inline-block;
+  border-radius: 25px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.hero h1 {
+  font-size: clamp(38px, 6vw, 65px);
+  line-height: 1.1;
+  margin: 22px 0;
+}
+
+.hero p {
+  font-size: 18px;
+  margin-bottom: 25px;
+}
+
+.button {
+  display: inline-block;
+  background: #2c854d;
+  color: white;
+  padding: 13px 20px;
+  text-decoration: none;
+  border-radius: 9px;
+  font-weight: bold;
+  margin: 4px;
+}
+
+section {
+  padding: 55px 7%;
+}
+
+.section-heading {
+  margin-bottom: 25px;
+}
+
+.section-heading h2 {
+  font-size: 31px;
+  margin-bottom: 5px;
+}
+
+.muted {
+  color: #718073;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e2e9df;
+  box-shadow: 0 5px 18px rgba(20,60,30,.06);
+}
+
+.crop-picture {
+  height: 155px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 65px;
+  background: linear-gradient(135deg, #e2f2d8, #c7e2b8);
+}
+
+.card-content {
+  padding: 20px;
+}
+
+.card h3 {
+  margin-bottom: 5px;
+  font-size: 20px;
+}
+
+.price {
+  color: var(--green);
+  font-size: 23px;
+  font-weight: bold;
+  margin: 12px 0;
+}
+
+.panel {
+  background: white;
+  padding: 28px;
+  border-radius: 17px;
+  border: 1px solid #e0e9dc;
+  max-width: 850px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.field label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 7px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #d6e0d4;
+  border-radius: 9px;
+  font: inherit;
+  background: white;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.submit {
+  border: none;
+  background: var(--green);
+  color: white;
+  border-radius: 9px;
+  padding: 14px 22px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 20px;
+}
+
+.feature {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  border: 1px solid #e0e9dc;
+}
+
+.feature-icon {
+  font-size: 34px;
+}
+
+footer {
+  background: #153e27;
+  color: white;
+  text-align: center;
+  padding: 35px 7%;
+}
+
+@media (max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 
-  if (file.size > 3 * 1024 * 1024) {
-    alert("Please choose a photo smaller than 3 MB.");
-    this.value = "";
-    return;
+  .full {
+    grid-column: auto;
   }
 
-  const reader = new FileReader();
-
-  reader.onload = function () {
-    photoPreview.src = reader.result;
-    photoPreview.hidden = false;
-  };
-
-  reader.readAsDataURL(file);
-});
-
-sellForm.addEventListener("submit", function (event) {
-  event.preventDefault();
-
-  const name = document.getElementById("produce").value.trim();
-  const farmer = document.getElementById("farmer").value.trim();
-  const quantity = Number(document.getElementById("quantity").value);
-  const price = Number(document.getElementById("price").value);
-  const location = document.getElementById("farmLocation").value.trim();
-  const file = cropPhoto.files[0];
-
-  if (!name || !farmer || !location || quantity <= 0 || price <= 0) {
-    alert("Please complete all fields with valid values.");
-    return;
+  nav a {
+    margin-left: 8px;
   }
 
-  if (file && (
-    !file.type.startsWith("image/") ||
-    file.size > 3 * 1024 * 1024
-  )) {
-    alert("Choose a valid image smaller than 3 MB.");
-    return;
+  section {
+    padding: 40px 5%;
   }
 
-  function addListing(imageData = "") {
-    products.unshift({
-      name: name,
-      farmer: farmer,
-      quantity: quantity,
-      price: price,
-      location: location,
-      imageData: imageData,
-      emoji: emojis[name] || "🌱"
-    });
-
-    renderProducts();
-    sellForm.reset();
-    photoPreview.hidden = true;
-    photoPreview.removeAttribute("src");
-
-    document.getElementById("formMessage").textContent =
-      "✅ Your crop listing has been added!";
-
-    document.getElementById("market").scrollIntoView({
-      behavior: "smooth"
-    });
+  .hero {
+    padding: 60px 6%;
   }
+}
+</style>
+</head>
 
-  if (file) {
-    const reader = new FileReader();
+<body>
 
-    reader.onload = function () {
-      addListing(reader.result);
-    };
+<nav>
+  <div class="logo">🌱 ShambaMarket</div>
+  <div>
+    <a href="#market">Marketplace</a>
+    <a href="#sell">Sell Produce</a>
+    <a href="#about">About</a>
+  </div>
+</nav>
 
-    reader.onerror = function () {
-      alert("Sorry, the photo could not be read. Please try again.");
-    };
+<header class="hero">
+  <div class="hero-content">
+    <span class="tag">🇰🇪 Supporting Kenyan Farmers</span>
+    <h1>Fresh from Kenyan farms.</h1>
+    <p>Discover fresh produce, compare prices and connect farmers with buyers. Growing together, one harvest at a time.</p>
+    <a href="#market" class="button">Explore marketplace →</a>
+    <a href="#sell" class="button">Sell your produce</a>
+  </div>
+</header>
 
-    reader.readAsDataURL(file);
-  } else {
-    addListing();
-  }
-});
+<section id="market">
+  <div class="section-heading">
+    <h2>Explore fresh produce 🥑</h2>
+    <p class="muted">A sample of what you can discover on ShambaMarket.</p>
+  </div>
+
+  <div class="products">
+
+    <article class="card">
+      <div class="crop-picture">🌽</div>
+      <div class="card-content">
+        <h3>Fresh Maize</h3>
+        <p class="muted">📍 Nakuru</p>
+        <div class="price">KSh 45 / kg</div>
+        <p>500 kg available</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="crop-picture">🍅</div>
+      <div class="card-content">
+        <h3>Tomatoes</h3>
+        <p class="muted">📍 Kiambu</p>
+        <div class="price">KSh 60 / kg</div>
+        <p>100 kg available</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="crop-picture">🥔</div>
+      <div class="card-content">
+        <h3>Potatoes</h3>
+        <p class="muted">📍 Nyeri</p>
+        <div class="price">KSh 40 / kg</div>
+        <p>250 kg available</p>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="crop-picture">🫘</div>
+      <div class="card-content">
+        <h3>Beans</h3>
+        <p class="muted">📍 Eldoret</p>
+        <div class="price">KSh 120 / kg</div>
+        <p>80 kg available</p>
+      </div>
+    </article>
+
+  </div>
+
+  <p class="muted" style="margin-top:20px;font-size:13px">
+    Sample listings and prices for demonstration only.
+  </p>
+</section>
+
+<section id="sell">
+  <div class="section-heading">
+    <h2>List your produce 🧑‍🌾</h2>
+    <p class="muted">Tell buyers what you have harvested.</p>
+  </div>
+
+  <div class="panel">
+    <span class="tag">FARMER PORTAL</span>
+    <h2 style="margin-top:14px">Add a crop listing</h2>
+    <p class="muted">Enter any crop name, even if it is not on a suggested list.</p>
+
+    <form action="#" method="get" class="form-grid">
+
+      <div class="field">
+        <label for="farmer">Farmer's name</label>
+        <input id="farmer" name="farmer" placeholder="e.g. Wanjiku" required>
+      </div>
+
+      <div class="field">
+        <label for="produce">Crop name</label>
+        <input id="produce" name="produce" list="cropSuggestions"
+          placeholder="e.g. Cassava, Sorghum..." maxlength="60" required>
+        <datalist id="cropSuggestions">
+          <option value="Maize">
+          <option value="Tomatoes">
+          <option value="Potatoes">
+          <option value="Beans">
+          <option value="Cassava">
+          <option value="Sorghum">
+          <option value="Sweet potatoes">
+          <option value="Dragon fruit">
+          <option value="Avocados">
+        </datalist>
+      </div>
+
+      <div class="field">
+        <label for="quantity">Quantity (kg)</label>
+        <input id="quantity" name="quantity" type="number"
+          min="1" placeholder="e.g. 100" required>
+      </div>
+
+      <div class="field">
+        <label for="price">Price per kg (KSh)</label>
+        <input id="price" name="price" type="number"
+          min="1" placeholder="e.g. 50" required>
+      </div>
+
+      <div class="field full">
+        <label for="location">County or town</label>
+        <input id="location" name="location"
+          placeholder="e.g. Nakuru" required>
+      </div>
+
+      <div class="field full">
+        <label for="cropPhoto">Upload a real crop photo</label>
+        <input id="cropPhoto" name="cropPhoto" type="file"
+          accept="image/*">
+        <p class="muted" style="font-size:13px;margin-top:6px">
+          Select a photo from your computer or phone.
+        </p>
+      </div>
+
+      <div class="field full">
+        <button type="submit" class="submit">Submit listing →</button>
+        <p class="muted" style="font-size:13px;margin-top:12px">
+          This demonstration form does not save or publish listings yet.
+        </p>
+      </div>
+
+    </form>
+  </div>
+</section>
+
+<section id="about">
+  <div class="section-heading">
+    <h2>Why ShambaMarket?</h2>
+    <p class="muted">Technology bringing farmers and buyers closer.</p>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">🤝</div>
+      <h3>Connect directly</h3>
+      <p class="muted">Help buyers discover produce from local farmers.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">💰</div>
+      <h3>Compare prices</h3>
+      <p class="muted">Make it easier to compare the listed prices of crops.</p>
+    </div>
+
+    <div class="feature">
+      <div class="feature-icon">🌍</div>
+      <h3>Support agriculture</h3>
+      <p class="muted">Help Kenyan farming communities reach more customers.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <h2>🌱 ShambaMarket</h2>
+  <p>Growing connections. Supporting Kenyan farmers.</p>
+  <p style="font-size:13px;margin-top:10px">
+    Science fair prototype · Made for Kenyan agriculture 🇰🇪
+  </p>
+</footer>
+
+</body>
+</html>
