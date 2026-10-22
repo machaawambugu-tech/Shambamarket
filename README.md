@@ -1,44 +1,45 @@
 
-# SHAMBAMARKET 🌱
+# SHAMBAMARKET 🇰🇪
 
-## Project Description
-SHAMBAMARKET is a farmer-to-buyer marketplace designed
-to help Kenyan farmers advertise agricultural produce
-and connect with potential buyers.
+**From Shamba to Soko — Kutoka shambani hadi sokoni.**
 
-## Problem Statement
-Some farmers struggle to reach buyers and share
-information about the produce they have available.
+SHAMBAMARKET is a marketplace concept designed to connect Kenyan farmers and buyers.
 
-## Objectives
-- Help farmers list their produce.
-- Allow buyers to search for agricultural products.
-- Organize products into categories.
-- Display county, quantity, price and contact information.
-- Promote digital access to agricultural markets.
+## Main pages
 
-## Technologies Used
-- HTML: website structure
-- CSS: styling and responsive design
-- JavaScript: marketplace functionality
-- GitHub: source code hosting
+- **Soko:** Browse, search and filter farm produce.
+- **Shamba:** Add, view and delete farmer product listings.
 
-## How to Run
-1. Download or clone this repository.
-2. Open index.html in a web browser.
-3. Search for products or test the product listing form.
+## Categories
 
-## Current Limitations
-This is a demonstration prototype. Listings are stored
-in browser memory and reset when the page is refreshed.
-It does not yet have a shared database, verified accounts
-or real payment processing.
+1. Fruits
+2. Vegetables
+3. Nuts
+4. Starchy foods
+5. Grains
+6. Cereals
+7. Legumes
+8. Spices
+9. Herbal products
 
-## Future Improvements
-- Secure farmer and buyer accounts
-- Shared online database
-- M-Pesa integration
-- Product images
-- English and Kiswahili language options
-- Secure buyer-farmer messaging
+## Files
 
+- `index.html` — Main website structure
+- `design.css` — General styling
+- `soko.css` — Marketplace styling
+- `shamba.css` — Farmer dashboard styling
+- `mobile.css` — Responsive layout
+- `navigation.js` — Page navigation
+- `products.js` — Product data and search
+- `categories.js` — Category selection
+- `farmer.js` — Farmer listings
+- `messages.js` — Demo messages
+- `orders.js` — Demo orders
+- `login.js` — Demo profile
+- `settings.js` — Theme and startup
+
+## Current limitations
+
+This is a front-end prototype. Products, messages, orders and the demo profile are stored in the current browser. They are not shared between users or devices.
+
+Real authentication, secure private messaging, a shared online database and M-Pesa payments require backend services and additional security work.
