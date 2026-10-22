@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ShambaMarket</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7f2;
+            color: #222;
+        }
+
+        header {
+            background: #176b2c;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin-bottom: 5px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 25px auto;
+        }
+
+        .form-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+
+        .form-box h2 {
+            margin-bottom: 15px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 7px;
+            background: #176b2c;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0e4d1f;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .product {
+            background: white;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .product h3 {
+            color: #176b2c;
+            margin-bottom: 10px;
+        }
+
+        .product p {
+            margin: 6px 0;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🌾 ShambaMarket</h1>
+    <p>Connecting Kenyan Farmers With Buyers</p>
+</header>
+
+<div class="container">
+
+    <div class="form-box">
+
+        <h2>➕ Sell Your Produce</h2>
+
+        <input
+            type="text"
+            id="farmerName"
+            placeholder="Farmer name"
+        >
+
+        <input
+            type="text"
+            id="productName"
+            placeholder="Produce e.g. Maize"
+        >
+
+        <input
+            type="number"
+            id="quantity"
+            placeholder="Quantity in kg"
+        >
+
+        <input
+            type="number"
+            id="price"
+            placeholder="Price per kg (KSh)"
+        >
+
+        <input
+            type="text"
+            id="location"
+            placeholder="Location e.g. Nakuru"
+        >
+
+        <button onclick="addProduct()">
+            Add Produce
+        </button>
+
+    </div>
+
+
+    <h2>🛒 Available Produce</h2>
+
+    <br>
+
+    <div id="productList" class="products">
+
+    </div>
+
+</div>
+
+
+<script>
+
+    let products = [];
+
+    function addProduct() {
+
+        const farmerName =
+            document.getElementById("farmerName").value;
+
+        const productName =
+            document.getElementById("productName").value;
+
+        const quantity =
+            document.getElementById("quantity").value;
+
+        const price =
+            document.getElementById("price").value;
+
+        const location =
+            document.getElementById("location").value;
+
+
+        if (
+            farmerName === "" ||
+            productName === "" ||
+            quantity === "" ||
+            price === "" ||
+            location === ""
+        ) {
+            alert("Please fill in all the fields.");
+            return;
+        }
+
+
+        const product = {
+
+            farmer: farmerName,
+
+            name: productName,
+
+            quantity: quantity,
+
+            price: price,
+
+            location: location
+
+        };
+
+
+        products.push(product);
+
+        displayProducts();
+
+
+        document.getElementById("farmerName").value = "";
+        document.getElementById("productName").value = "";
+        document.getElementById("quantity").value = "";
+        document.getElementById("price").value = "";
+        document.getElementById("location").value = "";
+
+    }
+
+
+    function displayProducts() {
+
+        const productList =
+            document.getElementById("productList");
+
+        productList.innerHTML = "";
+
+
+        products.forEach(function(product) {
+
+            const card = document.createElement("div");
+
+            card.className = "product";
+
+
+            card.innerHTML = `
+
+                <h3>🌾 ${product.name}</h3>
+
+                <p>
+                    <strong>Farmer:</strong>
+                    ${product.farmer}
+                </p>
+
+                <p>
+                    <strong>Quantity:</strong>
+                    ${product.quantity} kg
+                </p>
+
+                <p class="price">
+                    KSh ${product.price} / kg
+                </p>
+
+                <p>
+                    📍 ${product.location}
+                </p>
+
+            `;
+
+
+            productList.appendChild(card);
+
+        });
+
+    }
+
+</script>
+
+</body>
+</html>
