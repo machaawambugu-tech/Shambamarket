@@ -1,9 +1,9 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>ShambaMarket</title>
 
     <style>
@@ -20,61 +20,91 @@
         }
 
         header {
-            background: #176b2c;
+            background: #263d22;
             color: white;
-            padding: 20px;
+            padding: 24px 15px;
             text-align: center;
         }
 
         header h1 {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .container {
-            width: 90%;
+            width: 92%;
             max-width: 1000px;
-            margin: 25px auto;
+            margin: 30px auto;
         }
 
         .form-box {
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            margin-bottom: 28px;
         }
 
         .form-box h2 {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
+            color: #263d22;
         }
 
         input, select {
+            display: block;
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 7px;
+            padding: 14px;
+            margin: 10px 0;
+            border: 1px solid #cbd5c5;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            margin-top: 10px;
+            padding: 14px;
+            margin-top: 12px;
             border: none;
-            border-radius: 7px;
-            background: #176b2c;
+            border-radius: 8px;
+            background: #48683a;
             color: white;
             font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
         }
 
         button:hover {
-            background: #0e4d1f;
+            background: #263d22;
+        }
+
+        .secondary {
+            background: white;
+            color: #263d22;
+            border: 1px solid #48683a;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .hint {
+            color: #596653;
+            font-size: 13px;
+            margin: 6px 0 12px;
+            line-height: 1.5;
+        }
+
+        .status {
+            margin-top: 12px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
         }
 
         .products {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(
+                auto-fit, minmax(220px, 1fr)
+            );
             gap: 20px;
         }
 
@@ -82,21 +112,31 @@
             background: white;
             padding: 18px;
             border-radius: 12px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         }
 
         .product h3 {
-            color: #176b2c;
+            color: #48683a;
             margin-bottom: 10px;
         }
 
         .product p {
-            margin: 6px 0;
+            margin: 8px 0;
         }
 
         .price {
             font-size: 20px;
             font-weight: bold;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 15px 0;
+            color: #777;
+        }
+
+        #recaptcha-container {
+            margin-top: 12px;
         }
     </style>
 </head>
@@ -110,168 +150,279 @@
 
 <div class="container">
 
-    <div class="form-box">
+    <!-- LOGIN AND SIGN-UP -->
+    <div class="form-box" id="authBox">
+        <h2>Welcome to ShambaMarket 🌱</h2>
+        <p>Sign in or create an account to continue.</p>
 
-        <h2>➕ Sell Your Produce</h2>
+        <label for="accountRole">I want to:</label>
+        <select id="accountRole">
+            <option value="buyer">Buy produce</option>
+            <option value="farmer">Sell produce as a farmer</option>
+        </select>
 
+        <label for="phoneNumber">Kenyan phone number</label>
         <input
-            type="text"
-            id="farmerName"
-            placeholder="Farmer name"
+            type="tel"
+            id="phoneNumber"
+            placeholder="0712345678"
+            autocomplete="tel"
         >
 
-        <input
-            type="text"
-            id="productName"
-            placeholder="Produce e.g. Maize"
-        >
+        <p class="hint">
+            Enter 07XXXXXXXX, 01XXXXXXXX,
+            7XXXXXXXX, or 1XXXXXXXX.
+            You do not need to type +254.
+        </p>
 
-        <input
-            type="number"
-            id="quantity"
-            placeholder="Quantity in kg"
-        >
+        <div id="recaptcha-container"></div>
 
-        <input
-            type="number"
-            id="price"
-            placeholder="Price per kg (KSh)"
-        >
-
-        <input
-            type="text"
-            id="location"
-            placeholder="Location e.g. Nakuru"
-        >
-
-        <button onclick="addProduct()">
-            Add Produce
+        <button id="sendCodeButton" type="button">
+            Send verification code
         </button>
 
+        <div id="verificationSection" class="hidden">
+            <label for="verificationCode">
+                Enter the SMS verification code
+            </label>
+            <input
+                type="text"
+                id="verificationCode"
+                placeholder="Enter code"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+            >
+            <button id="verifyCodeButton" type="button">
+                Verify and sign in
+            </button>
+        </div>
+
+        <div class="divider">OR</div>
+
+        <button class="secondary" id="googleButton" type="button">
+            Continue with Google
+        </button>
+
+        <p id="authStatus" class="status" role="status"></p>
+
+        <p class="hint">
+            Phone verification and Google sign-in require
+            Firebase configuration before they can work.
+        </p>
     </div>
 
+    <!-- MARKETPLACE -->
+    <div id="marketplace" class="hidden">
 
-    <h2>🛒 Available Produce</h2>
+        <div class="form-box">
+            <h2>👋 Your ShambaMarket Account</h2>
+            <p id="accountInfo"></p>
+            <button class="secondary" id="signOutButton">
+                Sign out
+            </button>
+        </div>
 
-    <br>
+        <div class="form-box hidden" id="sellBox">
+            <h2>➕ Sell Your Produce</h2>
 
-    <div id="productList" class="products">
+            <input id="farmerName" placeholder="Farmer name">
+
+            <input id="productName"
+                   placeholder="Produce e.g. Maize">
+
+            <select id="category">
+                <option value="">Choose product category</option>
+                <option>Fruits</option>
+                <option>Vegetables</option>
+                <option>Starchy</option>
+                <option>Grains</option>
+                <option>Cereals</option>
+                <option>Spices</option>
+                <option>Herbal</option>
+            </select>
+
+            <input id="county"
+                   placeholder="County e.g. Nakuru">
+
+            <input id="region"
+                   placeholder="Region / town">
+
+            <input id="contact"
+                   type="tel"
+                   placeholder="Farmer contact number">
+
+            <input id="quantity"
+                   type="number"
+                   min="0.01"
+                   step="any"
+                   placeholder="Quantity in kg">
+
+            <input id="price"
+                   type="number"
+                   min="0.01"
+                   step="any"
+                   placeholder="Price per kg (KSh)">
+
+            <label for="productImage">Product photograph</label>
+            <input id="productImage" type="file"
+                   accept="image/*">
+
+            <button id="addProductButton" type="button">
+                Publish Produce
+            </button>
+        </div>
+
+        <h2>🛒 Available Produce</h2>
+        <br>
+        <div id="productList" class="products"></div>
 
     </div>
-
 </div>
 
+<script type="module">
+    /*
+      IMPORTANT:
+      This interface does not send SMS by itself.
+      Connect Firebase Authentication and Firestore
+      before enabling real accounts and saved listings.
+    */
 
-<script>
+    const authBox = document.getElementById("authBox");
+    const marketplace = document.getElementById("marketplace");
+    const authStatus = document.getElementById("authStatus");
 
     let products = [];
 
-    function addProduct() {
+    // Accept Kenyan local or international phone formats.
+    function formatKenyanNumber(input) {
+        let phone = input.trim().replace(/[\s()-]/g, "");
 
-        const farmerName =
-            document.getElementById("farmerName").value;
-
-        const productName =
-            document.getElementById("productName").value;
-
-        const quantity =
-            document.getElementById("quantity").value;
-
-        const price =
-            document.getElementById("price").value;
-
-        const location =
-            document.getElementById("location").value;
-
-
-        if (
-            farmerName === "" ||
-            productName === "" ||
-            quantity === "" ||
-            price === "" ||
-            location === ""
-        ) {
-            alert("Please fill in all the fields.");
-            return;
+        if (phone.startsWith("+254")) {
+            phone = phone.substring(1);
+        } else if (phone.startsWith("254")) {
+            // Already includes the Kenyan country code.
+        } else if (/^0[17]\d{8}$/.test(phone)) {
+            phone = "254" + phone.substring(1);
+        } else if (/^[17]\d{8}$/.test(phone)) {
+            phone = "254" + phone;
+        } else {
+            throw new Error(
+                "Enter a valid Kenyan number, such as 0712345678."
+            );
         }
 
+        if (!/^254[17]\d{8}$/.test(phone)) {
+            throw new Error("Please check your phone number.");
+        }
 
-        const product = {
-
-            farmer: farmerName,
-
-            name: productName,
-
-            quantity: quantity,
-
-            price: price,
-
-            location: location
-
-        };
-
-
-        products.push(product);
-
-        displayProducts();
-
-
-        document.getElementById("farmerName").value = "";
-        document.getElementById("productName").value = "";
-        document.getElementById("quantity").value = "";
-        document.getElementById("price").value = "";
-        document.getElementById("location").value = "";
-
+        return "+" + phone;
     }
 
+    document.getElementById("sendCodeButton")
+        .addEventListener("click", () => {
+            try {
+                const phone = formatKenyanNumber(
+                    document.getElementById("phoneNumber").value
+                );
 
-    function displayProducts() {
-
-        const productList =
-            document.getElementById("productList");
-
-        productList.innerHTML = "";
-
-
-        products.forEach(function(product) {
-
-            const card = document.createElement("div");
-
-            card.className = "product";
-
-
-            card.innerHTML = `
-
-                <h3>🌾 ${product.name}</h3>
-
-                <p>
-                    <strong>Farmer:</strong>
-                    ${product.farmer}
-                </p>
-
-                <p>
-                    <strong>Quantity:</strong>
-                    ${product.quantity} kg
-                </p>
-
-                <p class="price">
-                    KSh ${product.price} / kg
-                </p>
-
-                <p>
-                    📍 ${product.location}
-                </p>
-
-            `;
-
-
-            productList.appendChild(card);
-
+                authStatus.textContent =
+                    "Number formatted as " + phone +
+                    ". Firebase SMS verification has not been connected yet.";
+            } catch (error) {
+                authStatus.textContent = error.message;
+            }
         });
 
-    }
+    document.getElementById("googleButton")
+        .addEventListener("click", () => {
+            authStatus.textContent =
+                "Google sign-in is not connected yet. Configure Firebase first.";
+        });
 
+    document.getElementById("verifyCodeButton")
+        .addEventListener("click", () => {
+            authStatus.textContent =
+                "SMS verification is not connected yet. Configure Firebase first.";
+        });
+
+    document.getElementById("signOutButton")
+        .addEventListener("click", () => {
+            marketplace.classList.add("hidden");
+            authBox.classList.remove("hidden");
+        });
+
+    // Demo listing interface only; listings are not saved online.
+    document.getElementById("addProductButton")
+        .addEventListener("click", () => {
+            const farmer = document.getElementById("farmerName").value.trim();
+            const name = document.getElementById("productName").value.trim();
+            const category = document.getElementById("category").value;
+            const county = document.getElementById("county").value.trim();
+            const region = document.getElementById("region").value.trim();
+            const contact = document.getElementById("contact").value.trim();
+            const quantity = Number(document.getElementById("quantity").value);
+            const price = Number(document.getElementById("price").value);
+            const file = document.getElementById("productImage").files[0];
+
+            if (!farmer || !name || !category || !county ||
+                !region || !contact || quantity <= 0 || price <= 0) {
+                alert("Please complete all fields with valid values.");
+                return;
+            }
+
+            const product = {
+                farmer, name, category, county, region,
+                contact, quantity, price,
+                image: file ? URL.createObjectURL(file) : ""
+            };
+
+            products.unshift(product);
+            displayProducts();
+        });
+
+    function displayProducts() {
+        const list = document.getElementById("productList");
+        list.replaceChildren();
+
+        products.forEach(product => {
+            const card = document.createElement("article");
+            card.className = "product";
+
+            if (product.image) {
+                const image = document.createElement("img");
+                image.src = product.image;
+                image.alt = product.name;
+                image.style.width = "100%";
+                image.style.borderRadius = "8px";
+                card.appendChild(image);
+            }
+
+            const title = document.createElement("h3");
+            title.textContent = product.name;
+            card.appendChild(title);
+
+            [
+                "Category: " + product.category,
+                "Farmer: " + product.farmer,
+                "Quantity: " + product.quantity + " kg",
+                "Location: " + product.region + ", " + product.county,
+                "Contact: " + product.contact
+            ].forEach(line => {
+                const p = document.createElement("p");
+                p.textContent = line;
+                card.appendChild(p);
+            });
+
+            const price = document.createElement("p");
+            price.className = "price";
+            price.textContent = "KSh " + product.price + " / kg";
+            card.appendChild(price);
+
+            list.appendChild(card);
+        });
+    }
 </script>
 
 </body>
 </html>
+```
