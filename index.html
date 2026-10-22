@@ -2,140 +2,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ShambaMarket</title>
-
-    <link rel="stylesheet" href="css/style.css">
-    <script type="module" src="js/app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHAMBAMARKET | Farm to Buyer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
+  <header>
+    <h1>🌱 SHAMBAMARKET</h1>
+    <p>Connecting Kenyan farmers to buyers</p>
+  </header>
 
-<header>
-    <h1>🌾 ShambaMarket</h1>
-    <p>Connecting Kenyan Farmers With Buyers</p>
-</header>
+  <nav>
+    <a href="#market">Marketplace</a>
+    <a href="#sell">Sell Produce</a>
+    <a href="#about">About Us</a>
+  </nav>
 
-<main class="container">
+  <main>
+    <section id="market">
+      <h2>Fresh from Kenyan Farms</h2>
 
-    <!-- LOGIN AND SIGN UP -->
-    <section class="form-box" id="authBox">
-        <h2>Welcome to ShambaMarket 🌱</h2>
-        <p>Sign in or create an account to continue.</p>
+      <input
+        type="search"
+        id="search"
+        placeholder="Search for maize, mangoes..."
+        aria-label="Search products"
+      >
 
-        <label for="accountRole">I want to:</label>
-        <select id="accountRole">
-            <option value="buyer">Buy produce</option>
-            <option value="farmer">Sell produce as a farmer</option>
+      <select id="category" aria-label="Filter by category">
+        <option value="all">All categories</option>
+        <option value="fruit">Fruits</option>
+        <option value="vegetable">Vegetables</option>
+        <option value="grain">Grains and cereals</option>
+        <option value="starchy">Starchy foods</option>
+        <option value="spice">Spices and herbs</option>
+      </select>
+
+      <div id="product-list" class="products"></div>
+    </section>
+
+    <section id="sell">
+      <h2>List Your Farm Produce</h2>
+
+      <form id="product-form">
+        <label for="name">Product name</label>
+        <input id="name" required placeholder="e.g. Maize">
+
+        <label for="type">Product category</label>
+        <select id="type" required>
+          <option value="fruit">Fruit</option>
+          <option value="vegetable">Vegetable</option>
+          <option value="grain">Grain or cereal</option>
+          <option value="starchy">Starchy food</option>
+          <option value="spice">Spice or herb</option>
         </select>
 
-        <label for="phoneNumber">Phone number</label>
-        <input
-            type="tel"
-            id="phoneNumber"
-            placeholder="0712345678"
-            autocomplete="tel"
-        >
+        <label for="county">County</label>
+        <input id="county" required placeholder="e.g. Nakuru">
 
-        <p class="hint">
-            Enter 0712345678, 712345678, or +254712345678.
-        </p>
+        <label for="quantity">Quantity (kg)</label>
+        <input id="quantity" type="number" min="1" required>
 
-        <div id="recaptcha-container"></div>
+        <label for="price">Price per kg (KSh)</label>
+        <input id="price" type="number" min="1" required>
 
-        <button id="sendCodeButton" type="button">
-            Send verification code
-        </button>
+        <label for="contact">Farmer's contact</label>
+        <input id="contact" type="tel" required
+               placeholder="Phone number">
 
-        <div id="verificationSection" class="hidden">
-            <label for="verificationCode">Verification code</label>
-            <input
-                type="text"
-                id="verificationCode"
-                placeholder="Enter SMS code"
-                inputmode="numeric"
-            >
+        <button type="submit">Add Product</button>
+      </form>
 
-            <button id="verifyCodeButton" type="button">
-                Verify and sign in
-            </button>
-        </div>
-
-        <p class="divider">OR</p>
-
-        <button id="googleButton" class="secondary" type="button">
-            Continue with Google
-        </button>
-
-        <p id="authStatus" class="status" role="status"></p>
+      <p id="message" role="status"></p>
     </section>
 
-    <!-- MARKETPLACE -->
-    <section id="marketplace" class="hidden">
-
-        <section class="form-box">
-            <h2>Your Account</h2>
-            <p id="accountInfo"></p>
-            <button id="signOutButton" class="secondary">
-                Sign out
-            </button>
-        </section>
-
-        <!-- FARMER LISTING FORM -->
-        <section class="form-box hidden" id="sellBox">
-            <h2>➕ Sell Your Produce</h2>
-
-            <form id="productForm">
-                <label for="farmerName">Farmer name</label>
-                <input id="farmerName" required>
-
-                <label for="productName">Product name</label>
-                <input id="productName" placeholder="e.g. Maize" required>
-
-                <label for="category">Category</label>
-                <select id="category" required>
-                    <option value="">Choose category</option>
-                    <option>Fruits</option>
-                    <option>Vegetables</option>
-                    <option>Starchy</option>
-                    <option>Grains</option>
-                    <option>Cereals</option>
-                    <option>Spices</option>
-                    <option>Herbal</option>
-                </select>
-
-                <label for="county">County</label>
-                <input id="county" placeholder="e.g. Nakuru" required>
-
-                <label for="region">Region / town</label>
-                <input id="region" required>
-
-                <label for="contact">Contact number</label>
-                <input id="contact" type="tel" required>
-
-                <label for="quantity">Quantity (kg)</label>
-                <input id="quantity" type="number"
-                       min="0.01" step="any" required>
-
-                <label for="price">Price per kg (KSh)</label>
-                <input id="price" type="number"
-                       min="0.01" step="any" required>
-
-                <label for="productImage">Product photograph</label>
-                <input id="productImage" type="file"
-                       accept="image/*">
-
-                <button type="submit">Publish Produce</button>
-            </form>
-        </section>
-
-        <h2>🛒 Available Produce</h2>
-        <div id="productList" class="products"></div>
-
+    <section id="about">
+      <h2>About SHAMBAMARKET</h2>
+      <p>
+        SHAMBAMARKET helps Kenyan farmers showcase their produce
+        and helps buyers discover agricultural products by category.
+      </p>
     </section>
+  </main>
 
-</main>
-
+  <footer>
+    <p>SHAMBAMARKET — Supporting Kenyan Agriculture 🇰🇪</p>
+  </footer>
 </body>
 </html>
