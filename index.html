@@ -3,92 +3,134 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SHAMBAMARKET | Farm to Buyer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SHAMBAMARKET | Farm to Market</title>
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>🌱 SHAMBAMARKET</h1>
-    <p>Connecting Kenyan farmers to buyers</p>
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand-icon">🌱</span>
+      <span>SHAMBA<span class="brand-light">MARKET</span></span>
+    </a>
+    <a class="sell-link" href="#sell">+ Sell produce</a>
   </header>
 
-  <nav>
-    <a href="#market">Marketplace</a>
-    <a href="#sell">Sell Produce</a>
-    <a href="#about">About Us</a>
-  </nav>
-
   <main>
-    <section id="market">
-      <h2>Fresh from Kenyan Farms</h2>
+    <section class="welcome">
+      <span class="eyebrow">KENYA'S FARM MARKETPLACE</span>
+      <h1>Fresh from the farm.<br><span>Straight to you.</span></h1>
+      <p>Discover local produce and connect directly with Kenyan farmers.</p>
+      <a class="primary-button" href="#market">Explore marketplace ↓</a>
+    </section>
 
-      <input
-        type="search"
-        id="search"
-        placeholder="Search for maize, mangoes..."
-        aria-label="Search products"
-      >
+    <section class="market-section" id="market">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">THE MARKETPLACE</span>
+          <h2>Find fresh produce</h2>
+          <p>Search products or select a category.</p>
+        </div>
+        <span id="result-count" class="result-count">0 products</span>
+      </div>
 
-      <select id="category" aria-label="Filter by category">
-        <option value="all">All categories</option>
-        <option value="fruit">Fruits</option>
-        <option value="vegetable">Vegetables</option>
-        <option value="grain">Grains and cereals</option>
-        <option value="starchy">Starchy foods</option>
-        <option value="spice">Spices and herbs</option>
-      </select>
+      <div class="search-row">
+        <label class="search-box">
+          <span>🔎</span>
+          <input id="search" type="search"
+            placeholder="Search maize, mangoes, county..."
+            aria-label="Search produce">
+        </label>
+
+        <select id="category" aria-label="Filter by category">
+          <option value="all">All categories</option>
+          <option value="fruit">🍎 Fruits</option>
+          <option value="vegetable">🥬 Vegetables</option>
+          <option value="grain">🌽 Grains & cereals</option>
+          <option value="starchy">🥔 Starchy foods</option>
+          <option value="spice">🌿 Spices & herbs</option>
+        </select>
+      </div>
 
       <div id="product-list" class="products"></div>
+      <p id="empty-state" class="empty-state" hidden>
+        No products found. Try another search.
+      </p>
     </section>
 
-    <section id="sell">
-      <h2>List Your Farm Produce</h2>
+    <section class="sell-section" id="sell">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">FOR FARMERS</span>
+          <h2>List your produce</h2>
+          <p>Fill in the details below to add a product to this demo.</p>
+        </div>
+        <span class="form-icon">🧺</span>
+      </div>
 
       <form id="product-form">
-        <label for="name">Product name</label>
-        <input id="name" required placeholder="e.g. Maize">
+        <div class="form-grid">
+          <label>
+            Product name
+            <input id="name" required maxlength="60"
+              placeholder="e.g. Fresh mangoes">
+          </label>
 
-        <label for="type">Product category</label>
-        <select id="type" required>
-          <option value="fruit">Fruit</option>
-          <option value="vegetable">Vegetable</option>
-          <option value="grain">Grain or cereal</option>
-          <option value="starchy">Starchy food</option>
-          <option value="spice">Spice or herb</option>
-        </select>
+          <label>
+            Category
+            <select id="type" required>
+              <option value="fruit">Fruits</option>
+              <option value="vegetable">Vegetables</option>
+              <option value="grain">Grains & cereals</option>
+              <option value="starchy">Starchy foods</option>
+              <option value="spice">Spices & herbs</option>
+            </select>
+          </label>
 
-        <label for="county">County</label>
-        <input id="county" required placeholder="e.g. Nakuru">
+          <label>
+            County
+            <input id="county" required maxlength="50"
+              placeholder="e.g. Makueni">
+          </label>
 
-        <label for="quantity">Quantity (kg)</label>
-        <input id="quantity" type="number" min="1" required>
+          <label>
+            Quantity available (kg)
+            <input id="quantity" type="number" min="1" required
+              placeholder="e.g. 100">
+          </label>
 
-        <label for="price">Price per kg (KSh)</label>
-        <input id="price" type="number" min="1" required>
+          <label>
+            Price per kg (KSh)
+            <input id="price" type="number" min="1" required
+              placeholder="e.g. 80">
+          </label>
 
-        <label for="contact">Farmer's contact</label>
-        <input id="contact" type="tel" required
-               placeholder="Phone number">
+          <label>
+            Contact phone
+            <input id="contact" type="tel" required maxlength="20"
+              placeholder="e.g. 07XX XXX XXX">
+          </label>
+        </div>
 
-        <button type="submit">Add Product</button>
+        <button class="primary-button submit-button" type="submit">
+          + Add product to marketplace
+        </button>
+        <p id="message" role="status" aria-live="polite"></p>
       </form>
-
-      <p id="message" role="status"></p>
     </section>
 
-    <section id="about">
-      <h2>About SHAMBAMARKET</h2>
-      <p>
-        SHAMBAMARKET helps Kenyan farmers showcase their produce
-        and helps buyers discover agricultural products by category.
-      </p>
+    <section class="about-section" id="about">
+      <span class="eyebrow">OUR MISSION</span>
+      <h2>Helping Kenyan agriculture grow 🇰🇪</h2>
+      <p>SHAMBAMARKET aims to help farmers reach buyers, make produce easier to discover, and support local agriculture through technology.</p>
     </section>
   </main>
 
   <footer>
-    <p>SHAMBAMARKET — Supporting Kenyan Agriculture 🇰🇪</p>
+    <a class="brand" href="#">🌱 SHAMBAMARKET</a>
+    <p>Made for the future of Kenyan farming.</p>
+    <small>Science Fair prototype</small>
   </footer>
 </body>
 </html>
