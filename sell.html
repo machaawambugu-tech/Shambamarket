@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShambaMarket | Sell Produce</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f7faf7;color:#203329}
+header{background:#123b2a;color:white;padding:20px 6%;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
+.logo{font-size:25px;font-weight:bold}.logo span{color:#8de0aa}
+nav a{color:white;text-decoration:none;margin-left:18px;font-weight:bold}
+.hero{padding:35px 6%;background:#e7f3e9}
+.hero h1{color:#123b2a;margin:0 0 10px}
+main{max-width:760px;margin:30px auto;padding:0 18px 45px}
+form{background:white;border:1px solid #dfe8e0;border-radius:14px;padding:24px}
+.field{margin-bottom:18px}
+label{display:block;font-weight:bold;margin-bottom:8px}
+input{width:100%;padding:13px;border:1px solid #d8e4db;border-radius:8px;font:inherit}
+button{background:#167447;color:white;border:0;padding:13px 18px;border-radius:8px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.6}
+.note{background:#edf5ee;padding:13px;border-radius:8px;font-size:14px;line-height:1.5}
+#status{font-weight:bold;line-height:1.5}
+#preview{display:block;max-width:100%;max-height:240px;object-fit:contain;margin-top:12px;border-radius:8px}
+footer{text-align:center;background:#123b2a;color:white;padding:25px}
+nav a{white-space:nowrap}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Shamba<span>Market</span></div>
+  <nav>
+    <a href="index.html">Buy Produce</a>
+    <a href="sell.html">Sell Produce</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h1>List your harvest</h1>
+  <p>Reach buyers by sharing your crop details and price.</p>
+</section>
+
+<main>
+  <form id="sellForm">
+    <div class="note">
+      Your listing will appear on the buying page in this same browser.
+      This demo does not yet share listings with other people's devices.
+    </div>
+
+    <div class="field">
+      <label for="farmer">Farmer's name</label>
+      <input id="farmer" maxlength="70" required placeholder="Your name">
+    </div>
+
+    <div class="field">
+      <label for="crop">Crop name</label>
+      <input id="crop" maxlength="70" required placeholder="e.g. Dragon fruit">
+    </div>
+
+    <div class="field">
+      <label for="quantity">Quantity available</label>
+      <input id="quantity" maxlength="40" required placeholder="e.g. 20 kg">
+    </div>
+
+    <div class="field">
+      <label for="price">Price per kilogram (KSh)</label>
+      <input id="price" type="number" min="1" max="10000000" step="0.01" required placeholder="e.g. 250">
+    </div>
+
+    <div class="field">
+      <label for="location">Farm location</label>
+      <input id="location" maxlength="100" required placeholder="e.g. Nakuru, Kenya">
+    </div>
+
+    <div class="field">
+      <label for="photo">Crop photo (optional)</label>
+      <input id="photo" type="file" accept="image/jpeg,image/png,image/webp">
+      <img id="preview" alt="Crop photo preview" hidden>
+    </div>
+
+    <button id="submit" type="submit">Publish Listing</button>
+    <p id="status" role="status" aria-live="polite"></p>
+  </form>
+</main>
+
+<footer>
+  <strong>ShambaMarket</strong>
+  <p>Supporting Kenyan farmers.</p>
+</footer>
+
+<script>
+const KEY="shambamarket_listings_v1";
+const form=document.getElementById("sellForm");
+const photoInput=document.getElementById("photo");
+const preview=document.getElementById("preview");
+const status=document.getElementById("status");
+const button=document.getElementById("submit");
+let photoData="";
+
+function readPhoto(file){
+ return new Promise((resolve,reject)=>{
+  if(!file){resolve("");return;}
+  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){
+   reject(new Error("Please upload a JPG, PNG or WebP photo."));return;
+  }
+  if(file.size>5*1024*1024){
+   reject(new Error("Photo must be 5 MB or smaller."));return;
+  }
+  const reader=new FileReader();
+  reader.onerror=()=>reject(new Error("Could not read this photo."));
+  reader.onload=()=>{
+   const img=new Image();
+   img.onerror=()=>reject(new Error("This photo could not be opened."));
+   img.onload=()=>{
+    const scale=Math.min(1,600/Math.max(img.width,img.height));
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.max(1,Math.round(img.width*scale));
+    canvas.height=Math.max(1,Math.round(img.height*scale));
+    const ctx=canvas.getContext("2d");
+    if(!ctx){reject(new Error("Could not process photo."));return;}
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    resolve(canvas.toDataURL("image/jpeg",0.65));
+   };
+   img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+ });
+}
+
+photoInput.addEventListener("change",async()=>{
+ photoData="";
+ preview.hidden=true;
+ try{
+  photoData=await readPhoto(photoInput.files[0]);
+  if(photoData){preview.src=photoData;preview.hidden=false;}
+  status.textContent=photoData?"Photo ready.":"";
+ }catch(e){
+  photoInput.value="";
+  status.textContent=e.message;
+ }
+});
+
+form.addEventListener("submit",async event=>{
+ event.preventDefault();
+ if(!form.reportValidity())return;
+
+ button.disabled=true;
+ status.textContent="Saving listing...";
+
+ try{
+  const file=photoInput.files[0];
+  const photo=file?await readPhoto(file):"";
+  const listing={
+   id:Date.now().toString()+Math.random().toString(16).slice(2),
+   farmer:document.getElementById("farmer").value.trim(),
+   crop:document.getElementById("crop").value.trim(),
+   quantity:document.getElementById("quantity").value.trim(),
+   price:Number(document.getElementById("price").value),
+   location:document.getElementById("location").value.trim(),
+   photo:photo
+  };
+
+  if(!listing.farmer||!listing.crop||!listing.quantity||!listing.location||
+     !Number.isFinite(listing.price)||listing.price<=0){
+   throw new Error("Please complete all fields correctly.");
+  }
+
+  let previous;
+  try{
+   previous=JSON.parse(localStorage.getItem(KEY)||"[]");
+   if(!Array.isArray(previous))previous=[];
+  }catch{previous=[];}
+
+  localStorage.setItem(KEY,JSON.stringify([listing,...previous]));
+
+  form.reset();
+  photoData="";
+  preview.removeAttribute("src");
+  preview.hidden=true;
+  status.textContent="Success! Your listing is published in this browser.";
+ }catch(e){
+  status.textContent=e.name==="QuotaExceededError"
+   ?"Browser storage is full. Try submitting without a photo."
+   :(e.message||"Could not save listing. Please try again.");
+ }finally{
+  button.disabled=false;
+ }
+});
+</script>
+</body>
+</html>
