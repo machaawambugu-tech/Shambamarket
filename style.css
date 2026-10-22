@@ -1,0 +1,390 @@
+
+/* 1. THEME AND DEFAULTS */
+:root {
+  --olive: #50652f;
+  --olive-dark: #35451f;
+  --cream: #f7f8f1;
+  --white: #ffffff;
+  --text: #273022;
+  --muted: #6d7567;
+  --border: #e0e5d7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button, select, input {
+  min-height: 48px;
+}
+
+/* 2. TOP NAVIGATION */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px max(5%, calc((100% - 1100px) / 2));
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--olive-dark);
+}
+
+.brand-light {
+  font-weight: 500;
+}
+
+.brand-icon {
+  font-size: 1.5rem;
+}
+
+.sell-link {
+  background: var(--olive);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 9px;
+  font-weight: bold;
+}
+
+/* 3. WELCOME BANNER */
+main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 0 22px;
+}
+
+.welcome {
+  margin-top: 28px;
+  padding: 54px 36px;
+  border-radius: 20px;
+  background: #e8eedc;
+}
+
+.eyebrow {
+  color: var(--olive);
+  font-size: 0.77rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+h1 {
+  margin: 14px 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.12;
+  letter-spacing: -1px;
+}
+
+h1 span {
+  color: var(--olive);
+}
+
+.welcome p,
+.section-heading p,
+.about-section p {
+  color: var(--muted);
+}
+
+.welcome p {
+  max-width: 520px;
+  margin-bottom: 24px;
+}
+
+/* 4. BUTTONS */
+.primary-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 19px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--olive);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button:hover,
+.sell-link:hover {
+  background: var(--olive-dark);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #d5a63b;
+  outline-offset: 3px;
+}
+
+/* 5. MARKETPLACE SECTION */
+.market-section,
+.sell-section,
+.about-section {
+  margin: 30px 0;
+  padding: 28px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+h2 {
+  margin: 5px 0;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.section-heading p {
+  margin-top: 4px;
+}
+
+.result-count {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 20px;
+  background: #edf2e5;
+  color: var(--olive-dark);
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: 1fr 210px;
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.search-box input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+}
+
+.search-box:focus-within {
+  outline: 2px solid var(--olive);
+}
+
+select,
+.form-grid input {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: white;
+  color: var(--text);
+}
+
+/* 6. PRODUCT CARDS */
+.products {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fcfdf9;
+}
+
+.product-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: #edf2e5;
+  font-size: 1.8rem;
+}
+
+.product-card h3 {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.product-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.93rem;
+  overflow-wrap: anywhere;
+}
+
+.product-price {
+  margin-top: 7px;
+  color: var(--olive-dark);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.contact-line {
+  margin-top: auto !important;
+  padding-top: 12px;
+}
+
+.empty-state {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* 7. FARMER LISTING FORM */
+.form-icon {
+  font-size: 2.4rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 22px 0;
+}
+
+.form-grid label {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: bold;
+}
+
+.form-grid input {
+  display: block;
+  margin-top: 7px;
+  font-weight: normal;
+}
+
+.submit-button {
+  width: 100%;
+}
+
+#message {
+  color: var(--olive-dark);
+  font-weight: bold;
+}
+
+/* 8. ABOUT AND FOOTER */
+.about-section {
+  background: #edf2e5;
+}
+
+footer {
+  margin-top: 40px;
+  padding: 28px 20px;
+  text-align: center;
+  background: var(--olive-dark);
+  color: white;
+}
+
+footer .brand {
+  color: white;
+}
+
+footer p {
+  margin: 8px 0;
+}
+
+footer small {
+  opacity: 0.8;
+}
+
+/* 9. TABLETS AND PHONES */
+@media (max-width: 800px) {
+  .products {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .search-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  main {
+    padding: 0 12px;
+  }
+
+  .topbar {
+    padding: 14px 12px;
+  }
+
+  .brand {
+    font-size: 0.95rem;
+  }
+
+  .sell-link {
+    padding: 9px 11px;
+    font-size: 0.9rem;
+  }
+
+  .welcome {
+    padding: 35px 22px;
+  }
+
+  .market-section,
+  .sell-section,
+  .about-section {
+    padding: 19px;
+  }
+
+  .products,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+  }
+
+  .result-count {
+    font-size: 0.75rem;
+  }
+}
+
