@@ -2,139 +2,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ShambaMarket | Buy Produce</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f7faf7;color:#203329}
-header{background:#123b2a;color:white;padding:20px 6%;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
-.logo{font-size:25px;font-weight:bold}.logo span{color:#8de0aa}
-nav a{color:white;text-decoration:none;margin-left:18px;font-weight:bold}
-.hero{padding:42px 6%;background:#e7f3e9}
-.hero h1{font-size:clamp(30px,5vw,44px);margin:0 0 12px;color:#123b2a}
-.hero p{line-height:1.6;max-width:600px}
-main{max-width:1150px;margin:auto;padding:30px 18px}
-input{width:100%;padding:13px;border:1px solid #d8e4db;border-radius:9px;font-size:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:22px}
-.card{background:white;border:1px solid #e0e8e1;border-radius:13px;padding:14px;overflow:hidden}
-.card img{width:100%;height:165px;object-fit:cover;border-radius:9px;background:#eef4ef}
-.card h3{margin:14px 0 8px;font-size:21px}
-.price{font-size:22px;font-weight:bold;color:#167447;margin:10px 0}
-.details{font-size:14px;line-height:1.9;color:#52645a}
-.tag{display:inline-block;background:#e8f4eb;color:#17613c;padding:5px 9px;border-radius:20px;font-size:12px}
-.empty{padding:25px;background:white;border-radius:10px;margin-top:20px}
-footer{text-align:center;background:#123b2a;color:white;padding:25px}
-button{border:0;background:#167447;color:white;padding:12px 17px;border-radius:8px;font-weight:bold;cursor:pointer}
-@media(max-width:500px){nav a{margin-left:0;margin-right:12px}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShambaMarket | Fresh from Kenyan Farms</title>
+  <meta name="description" content="Discover fresh fruits and vegetables from Kenyan farmers on ShambaMarket.">
+  <style>
+    :root {
+      --green: #176b42;
+      --green-dark: #104d30;
+      --pale: #edf7ef;
+      --text: #17251c;
+      --muted: #66756b;
+      --line: #e3eae4;
+      --white: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f8faf8;
+      color: var(--text);
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .navbar {
+      background: white;
+      border-bottom: 1px solid var(--line);
+      padding: 16px 6%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--green);
+    }
+
+    .logo span { color: #f1a83b; }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a { font-size: 14px; font-weight: 600; }
+
+    .nav-links .sell-link {
+      background: var(--green);
+      color: white;
+      padding: 11px 16px;
+      border-radius: 9px;
+    }
+
+    .hero {
+      padding: 52px 6%;
+      background: var(--pale);
+    }
+
+    .hero-inner {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.12;
+      margin: 12px 0;
+      max-width: 650px;
+    }
+
+    h1 span { color: var(--green); }
+
+    .hero p {
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 570px;
+    }
+
+    .search-area {
+      display: flex;
+      gap: 10px;
+      max-width: 720px;
+      margin-top: 25px;
+    }
+
+    .search-area input {
+      flex: 1;
+      min-width: 0;
+      padding: 15px;
+      border: 1px solid #d5e2d7;
+      border-radius: 10px;
+      font-size: 15px;
+      background: white;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+      background: var(--green);
+      color: white;
+      border-radius: 10px;
+      padding: 14px 19px;
+      font-weight: 700;
+    }
+
+    button:hover, .sell-link:hover { background: var(--green-dark); }
+
+    main {
+      max-width: 1300px;
+      margin: auto;
+      padding: 38px 6% 60px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    h2 { margin: 0 0 7px; font-size: 27px; }
+
+    .subheading { margin: 0; color: var(--muted); font-size: 14px; }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .product {
+      overflow: hidden;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      transition: transform .18s, box-shadow .18s;
+    }
+
+    .product:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px #193d2410;
+    }
+
+    .product img {
+      width: 100%;
+      height: 205px;
+      object-fit: cover;
+      display: block;
+      background: #eaf1e9;
+    }
+
+    .product-body { padding: 17px; }
+
+    .tag {
+      display: inline-block;
+      background: var(--pale);
+      color: var(--green);
+      padding: 6px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .product h3 { margin: 12px 0 7px; font-size: 20px; }
+
+    .details {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    .price {
+      color: var(--green);
+      font-weight: 800;
+      font-size: 21px;
+      margin: 15px 0;
+    }
+
+    .price small {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 12px;
+    }
+
+    .product-bottom {
+      border-top: 1px solid var(--line);
+      padding-top: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .contact-btn {
+      display: block;
+      text-align: center;
+      margin-top: 14px;
+      padding: 11px;
+      border-radius: 9px;
+      background: var(--green);
+      color: white;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .empty {
+      display: none;
+      text-align: center;
+      padding: 45px 15px;
+      color: var(--muted);
+      background: white;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+    }
+
+    footer {
+      padding: 28px 6%;
+      text-align: center;
+      background: white;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 850px) {
+      .products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 560px) {
+      .products { grid-template-columns: 1fr; }
+      .product img { height: 230px; }
+      .search-area { flex-direction: column; }
+      .navbar { padding: 15px 5%; }
+      main { padding: 30px 5%; }
+      .hero { padding: 38px 5%; }
+    }
+  </style>
 </head>
 <body>
-<header>
-  <div class="logo">Shamba<span>Market</span></div>
-  <nav>
-    <a href="index.html">Buy Produce</a>
-    <a href="sell.html">Sell Produce</a>
-  </nav>
-</header>
+  <header class="navbar">
+    <a class="logo" href="index.html">Shamba<span>Market</span> 🌱</a>
+    <nav class="nav-links">
+      <a href="index.html">Buy produce</a>
+      <a href="sell.html" class="sell-link">+ Sell produce</a>
+      <a href="login.html">Log in</a>
+    </nav>
+  </header>
 
-<section class="hero">
-  <h1>Fresh produce. Fair prices.</h1>
-  <p>Discover fresh fruits and vegetables from Kenyan farmers.
-     Compare prices, check quantities and find produce near you.</p>
-  <a href="#market"><button>Explore Produce</button></a>
-</section>
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Fresh • Local • Kenyan</div>
+      <h1>Good food starts <span>on the farm.</span></h1>
+      <p>Discover fresh fruits and vegetables from farmers across Kenya. Find what you need and connect with sellers.</p>
+      <form class="search-area" id="searchForm">
+        <input id="searchInput" type="search"
+          placeholder="Search mangoes, tomatoes, location..."
+          aria-label="Search produce">
+        <button type="submit">Search produce</button>
+      </form>
+    </div>
+  </section>
 
-<main id="market">
-  <h2>Explore the marketplace</h2>
-  <p>Find your favourite crops and discover new produce.</p>
-  <input id="search" type="search" placeholder="Search crop, farmer or location...">
-  <div id="products" class="grid"></div>
-  <p id="empty" class="empty" hidden>No matching produce found.</p>
-  <p style="color:#66756b;font-size:13px;margin-top:25px">
-    Sample listings are examples. Confirm prices and availability with farmers.
-  </p>
-</main>
+  <main>
+    <div class="section-head">
+      <div>
+        <h2>Fresh on the market 🥑</h2>
+        <p class="subheading">Explore the produce available on ShambaMarket.</p>
+      </div>
+      <a href="sell.html" style="color:#176b42;font-weight:700;font-size:14px">
+        Are you a farmer? Sell here →
+      </a>
+    </div>
 
-<footer>
-  <strong>ShambaMarket</strong>
-  <p>Connecting Kenyan farmers and buyers.</p>
-</footer>
+    <div class="products" id="products">
 
-<script>
-const KEY = "shambamarket_listings_v1";
+      <article class="product" data-search="mangoes mango fruits murang'a kenya">
+        <img src="https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=700&q=80"
+             alt="Fresh ripe mangoes" loading="lazy">
+        <div class="product-body">
+          <span class="tag">Fruit</span>
+          <h3>Fresh Mangoes</h3>
+          <p class="details">Sweet, ripe mangoes ready to enjoy.</p>
+          <div class="price">KSh 80 <small>/ kg · example price</small></div>
+          <div class="product-bottom"><span>📍 Murang'a, Kenya</span><span>Sample listing</span></div>
+          <a class="contact-btn" href="sell.html">View selling options</a>
+        </div>
+      </article>
 
-const samples = [
- {crop:"Mangoes",price:120,quantity:"50 kg",location:"Machakos",farmer:"Sample Farmer",emoji:"🥭",image:"https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=700&q=80"},
- {crop:"Tomatoes",price:80,quantity:"100 kg",location:"Kiambu",farmer:"Sample Farmer",emoji:"🍅",image:"https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=700&q=80"},
- {crop:"Avocados",price:100,quantity:"40 kg",location:"Murang'a",farmer:"Sample Farmer",emoji:"🥑",image:"https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=700&q=80"},
- {crop:"Bananas",price:90,quantity:"60 kg",location:"Kisii",farmer:"Sample Farmer",emoji:"🍌",image:"https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=700&q=80"},
- {crop:"Potatoes",price:70,quantity:"80 kg",location:"Nyandarua",farmer:"Sample Farmer",emoji:"🥔",image:"https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=700&q=80"},
- {crop:"Dragon fruit",price:250,quantity:"20 kg",location:"Nakuru",farmer:"Sample Farmer",emoji:"🐉",image:""}
-];
+      <article class="product" data-search="tomatoes tomato vegetables naivasha kenya">
+        <img src="https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=700&q=80"
+             alt="Fresh red tomatoes" loading="lazy">
+        <div class="product-body">
+          <span class="tag">Vegetable</span>
+          <h3>Fresh Tomatoes</h3>
+          <p class="details">Red tomatoes for home cooking and business.</p>
+          <div class="price">KSh 60 <small>/ kg · example price</small></div>
+          <div class="product-bottom"><span>📍 Naivasha, Kenya</span><span>Sample listing</span></div>
+          <a class="contact-btn" href="sell.html">View selling options</a>
+        </div>
+      </article>
 
-function getUserListings(){
- try {
-  const data=JSON.parse(localStorage.getItem(KEY)||"[]");
-  return Array.isArray(data)?data:[];
- } catch { return []; }
-}
+      <article class="product" data-search="avocados avocado fruits kisii kenya">
+        <img src="https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=700&q=80"
+             alt="Fresh avocados cut in half" loading="lazy">
+        <div class="product-body">
+          <span class="tag">Fruit</span>
+          <h3>Fresh Avocados</h3>
+          <p class="details">Creamy avocados freshly picked from the farm.</p>
+          <div class="price">KSh 100 <small>/ kg · example price</small></div>
+          <div class="product-bottom"><span>📍 Kisii, Kenya</span><span>Sample listing</span></div>
+          <a class="contact-btn" href="sell.html">View selling options</a>
+        </div>
+      </article>
 
-function render(){
- const query=document.getElementById("search").value.trim().toLowerCase();
- const all=[...getUserListings(),...samples];
- const matches=all.filter(p=>
-  [p.crop,p.farmer,p.location].some(v=>String(v||"").toLowerCase().includes(query))
- );
- const container=document.getElementById("products");
- container.replaceChildren();
- document.getElementById("empty").hidden=matches.length>0;
+      <article class="product" data-search="bananas banana fruits meru kenya">
+        <img src="https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=700&q=80"
+             alt="Bunches of fresh bananas" loading="lazy">
+        <div class="product-body">
+          <span class="tag">Fruit</span>
+          <h3>Fresh Bananas</h3>
+          <p class="details">Naturally sweet bananas for your family or shop.</p>
+          <div class="price">KSh 70 <small>/ kg · example price</small></div>
+          <div class="product-bottom"><span>📍 Meru, Kenya</span><span>Sample listing</span></div>
+          <a class="contact-btn" href="sell.html">View selling options</a>
+        </div>
+      </article>
 
- matches.forEach(p=>{
-  const card=document.createElement("article");
-  card.className="card";
+      <article class="product" data-search="potatoes potato vegetables nyandarua kenya">
+        <img src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=700&q=80"
+             alt="Freshly harvested potatoes" loading="lazy">
+        <div class="product-body">
+          <span class="tag">Vegetable</span>
+          <h3>Fresh Potatoes</h3>
+          <p class="details">Farm-fresh potatoes for meals and markets.</p>
+          <div class="price">KSh 55 <small>/ kg · example price</small></div>
+          <div class="product-bottom"><span>📍 Nyandarua, Kenya</span><span>Sample listing</span></div>
+          <a class="contact-btn" href="sell.html">View selling options</a>
+        </div>
+      </article>
 
-  if(p.photo || p.image){
-   const img=document.createElement("img");
-   img.src=p.photo||p.image;
-   img.alt=p.crop;
-   img.onerror=()=>{img.replaceWith(document.createTextNode(p.emoji||"🥭"));};
-   card.appendChild(img);
-  } else {
-   const placeholder=document.createElement("div");
-   placeholder.style.cssText="height:165px;display:grid;place-items:center;background:#eef4ef;border-radius:9px;font-size:55px";
-   placeholder.textContent=p.emoji||"🍎";
-   card.appendChild(placeholder);
-  }
+      <article class="product" data-search="dragon fruit dragonfruit pitaya fruits kenya">
+        <img src="https://images.unsplash.com/photo-1527325678964-54921661f888?auto=format&fit=crop&w=700&q=80"
+             alt="Dragon fruit, pink skin and white flesh with black seeds"
+             loading="lazy">
+        <div class="product-body">
+          <span class="tag">Fruit</span>
+          <h3>Dragon Fruit</h3>
+          <p class="details">An eye-catching tropical fruit with sweet, refreshing flesh.</p>
+          <div class="price">KSh 350 <small>/ kg · example price</small></div>
+          <div class="product-bottom"><span>📍 Kenya</span><span>Sample listing</span></div>
+          <a class="contact-btn" href="sell.html">View selling options</a>
+        </div>
+      </article>
 
-  const title=document.createElement("h3");
-  title.textContent=p.crop;
-  card.appendChild(title);
+    </div>
 
-  const price=document.createElement("div");
-  price.className="price";
-  price.textContent="KSh "+Number(p.price).toLocaleString("en-KE")+" / kg";
-  card.appendChild(price);
+    <div class="empty" id="empty">
+      <h3>No matching produce found</h3>
+      <p>Try another crop name or location.</p>
+    </div>
+  </main>
 
-  const details=document.createElement("div");
-  details.className="details";
-  details.textContent="Quantity: "+p.quantity+" | Location: "+p.location;
-  card.appendChild(details);
+  <footer>
+    <strong>ShambaMarket 🌱</strong><br>
+    Connecting Kenyan farmers with buyers.<br>
+    <span>Sample prices are for demonstration only. Confirm prices and availability with sellers.</span>
+  </footer>
 
-  const farmer=document.createElement("p");
-  farmer.textContent="Farmer: "+p.farmer;
-  card.appendChild(farmer);
+  <script>
+    const searchForm = document.getElementById("searchForm");
+    const searchInput = document.getElementById("searchInput");
+    const cards = [...document.querySelectorAll(".product")];
+    const empty = document.getElementById("empty");
 
-  const tag=document.createElement("span");
-  tag.className="tag";
-  tag.textContent=p.id?"Farmer listing":"Example listing";
-  card.appendChild(tag);
+    function filterProducts() {
+      const term = searchInput.value.trim().toLowerCase();
+      let visible = 0;
 
-  container.appendChild(card);
- });
-}
-document.getElementById("search").addEventListener("input",render);
-render();
-</script>
+      cards.forEach(card => {
+        const matches = card.dataset.search.includes(term) ||
+          card.innerText.toLowerCase().includes(term);
+        card.style.display = matches ? "" : "none";
+        if (matches) visible++;
+      });
+
+      empty.style.display = visible ? "none" : "block";
+    }
+
+    searchForm.addEventListener("submit", event => {
+      event.preventDefault();
+      filterProducts();
+    });
+
+    searchInput.addEventListener("input", filterProducts);
+  </script>
 </body>
 </html>
