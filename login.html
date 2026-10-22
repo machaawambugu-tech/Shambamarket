@@ -1,0 +1,532 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | ShambaMarket</title>
+
+  <style>
+    :root {
+      --green: #176b42;
+      --dark: #104d30;
+      --pale: #edf7ef;
+      --text: #17251c;
+      --muted: #66756b;
+      --line: #e3eae4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f8f5;
+      color: var(--text);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      padding: 17px 6%;
+      background: white;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .logo {
+      font-size: 23px;
+      font-weight: 800;
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    .logo span { color: #e9a33b; }
+
+    nav { display: flex; gap: 18px; flex-wrap: wrap; }
+
+    nav a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 500px;
+      margin: 38px auto;
+      padding: 0 16px 40px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 26px;
+      box-shadow: 0 10px 30px #173b2010;
+    }
+
+    h1 { margin: 0 0 8px; font-size: 29px; }
+
+    .muted {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 12px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--green);
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--dark); }
+
+    button:disabled { opacity: 0.6; cursor: wait; }
+
+    button.google {
+      background: white;
+      color: #222;
+      border: 1px solid var(--line);
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      margin-top: 7px;
+      border: 1px solid #ccd8ce;
+      border-radius: 9px;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      margin-top: 17px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 24px 0;
+    }
+
+    .status {
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+    }
+
+    .hidden { display: none !important; }
+
+    .streak-card {
+      background: #fff4e6;
+      border-radius: 14px;
+      padding: 17px;
+      margin-top: 22px;
+    }
+
+    .streak-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .streak-stats small {
+      display: block;
+      color: #76552c;
+      margin-bottom: 7px;
+    }
+
+    .streak-stats strong { font-size: 23px; }
+
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-top: 17px;
+    }
+
+    .day {
+      text-align: center;
+      padding: 9px 0;
+      background: white;
+      border-radius: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .day.active {
+      background: #ffdfaa;
+      color: #804a00;
+      font-weight: bold;
+    }
+
+    .notice {
+      padding: 11px;
+      border-radius: 9px;
+      background: var(--pale);
+      color: var(--green);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 25px;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <a class="logo" href="index.html">Shamba<span>Market</span> 🌱</a>
+  <nav>
+    <a href="index.html">Buy produce</a>
+    <a href="sell.html">Sell produce</a>
+  </nav>
+</header>
+
+<main>
+  <section class="panel">
+    <div id="signedOut">
+      <h1>Welcome back 👋</h1>
+      <p class="muted">
+        Sign in to ShambaMarket, connect with farmers and build your daily streak.
+      </p>
+
+      <button class="google" id="googleBtn" type="button">
+        Continue with Google
+      </button>
+
+      <hr>
+
+      <h3>Sign in with your phone</h3>
+      <p class="muted">We'll send you an SMS verification code.</p>
+
+      <label for="phone">Phone number</label>
+      <input id="phone" type="tel"
+        placeholder="+2547XXXXXXXX"
+        autocomplete="tel">
+
+      <div id="recaptcha-container" style="margin-top:15px"></div>
+
+      <button id="sendCodeBtn" type="button">Send SMS code</button>
+
+      <label for="smsCode">Verification code</label>
+      <input id="smsCode" type="text"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        placeholder="Enter SMS code">
+
+      <button id="verifyBtn" type="button">Verify and sign in</button>
+
+      <p class="muted">
+        Phone verification requires an enabled Firebase Phone provider,
+        an authorized website domain and reCAPTCHA.
+        SMS limits or charges may apply.
+      </p>
+    </div>
+
+    <div id="signedIn" class="hidden">
+      <h1>You're in! 🎉</h1>
+      <p class="muted" id="welcome"></p>
+
+      <div class="streak-card">
+        <h2 style="margin-top:0">Your Shamba Streak 🔥</h2>
+
+        <div class="streak-stats">
+          <div>
+            <small>Current streak</small>
+            <strong id="currentStreak">🔥 0 days</strong>
+          </div>
+
+          <div>
+            <small>Best streak</small>
+            <strong id="bestStreak">🏆 0 days</strong>
+          </div>
+        </div>
+
+        <div class="days">
+          <div class="day" id="day0">Mon</div>
+          <div class="day" id="day1">Tue</div>
+          <div class="day" id="day2">Wed</div>
+          <div class="day" id="day3">Thu</div>
+          <div class="day" id="day4">Fri</div>
+          <div class="day" id="day5">Sat</div>
+          <div class="day" id="day6">Sun</div>
+        </div>
+
+        <p class="muted" id="streakMessage">
+          Checking your daily streak...
+        </p>
+      </div>
+
+      <button id="sellBtn" type="button">🌾 Sell your produce</button>
+      <button id="homeBtn" type="button">🏡 Go to marketplace</button>
+      <button id="logoutBtn" class="google" type="button">Sign out</button>
+    </div>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </section>
+</main>
+
+<footer>
+  ShambaMarket 🌱 — Connecting Kenyan farmers with buyers.
+</footer>
+
+<script type="module">
+  // IMPORTANT:
+  // Create firebase-config.js separately and paste your real Firebase
+  // web-app configuration into it.
+
+  import { auth, db } from "./firebase-config.js";
+
+  import {
+    GoogleAuthProvider,
+    signInWithPopup,
+    signInWithPhoneNumber,
+    RecaptchaVerifier,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+  import {
+    doc,
+    runTransaction,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const $ = id => document.getElementById(id);
+
+  let confirmationResult = null;
+  let recaptchaVerifier = null;
+  let checkingStreak = false;
+
+  function showStatus(message) {
+    $("status").textContent = message;
+  }
+
+  // Use the calendar date in Kenya, regardless of device timezone.
+  function kenyaDateKey() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Africa/Nairobi",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date());
+
+    const result = {};
+    parts.forEach(part => result[part.type] = part.value);
+
+    return `${result.year}-${result.month}-${result.day}`;
+  }
+
+  function dateNumber(dateKey) {
+    return Math.floor(
+      Date.parse(dateKey + "T00:00:00Z") / 86400000
+    );
+  }
+
+  function showWeek() {
+    const today = new Date(
+      new Date().toLocaleString("en-US", {
+        timeZone: "Africa/Nairobi"
+      })
+    );
+
+    // Monday = 0, Sunday = 6
+    const mondayIndex = (today.getDay() + 6) % 7;
+
+    for (let i = 0; i < 7; i++) {
+      $("day" + i).classList.toggle("active", i === mondayIndex);
+    }
+  }
+
+  async function updateStreak(user) {
+    if (checkingStreak) return;
+    checkingStreak = true;
+
+    try {
+      const today = kenyaDateKey();
+      const userRef = doc(db, "users", user.uid);
+
+      const streak = await runTransaction(db, async transaction => {
+        const snapshot = await transaction.get(userRef);
+        const data = snapshot.exists() ? snapshot.data() : {};
+
+        let current = Number(data.currentStreak || 0);
+        let best = Number(data.bestStreak || 0);
+        const last = data.lastCheckIn || "";
+
+        if (last !== today) {
+          if (last && dateNumber(today) - dateNumber(last) === 1) {
+            current += 1;
+          } else {
+            current = 1;
+          }
+
+          best = Math.max(best, current);
+
+          transaction.set(userRef, {
+            displayName: user.displayName || "",
+            email: user.email || "",
+            phoneNumber: user.phoneNumber || "",
+            currentStreak: current,
+            bestStreak: best,
+            lastCheckIn: today,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+
+          return { current, best, checkedIn: true };
+        }
+
+        return { current, best, checkedIn: false };
+      });
+
+      $("currentStreak").textContent =
+        `🔥 ${streak.current} day${streak.current === 1 ? "" : "s"}`;
+
+      $("bestStreak").textContent =
+        `🏆 ${streak.best} day${streak.best === 1 ? "" : "s"}`;
+
+      $("streakMessage").textContent = streak.checkedIn
+        ? "Daily check-in complete! Come back tomorrow to continue your streak."
+        : "You've already checked in today. Come back tomorrow to keep your streak alive.";
+
+      showWeek();
+
+    } catch (error) {
+      console.error(error);
+      $("streakMessage").textContent =
+        "We couldn't save your streak. Check that Firestore is created and its rules are published.";
+    } finally {
+      checkingStreak = false;
+    }
+  }
+
+  // Google sign-in
+  $("googleBtn").addEventListener("click", async () => {
+    try {
+      showStatus("Opening Google sign-in...");
+      await signInWithPopup(auth, new GoogleAuthProvider());
+      showStatus("");
+    } catch (error) {
+      showStatus("Google sign-in failed: " + error.message);
+    }
+  });
+
+  // Phone sign-in: send the SMS
+  $("sendCodeBtn").addEventListener("click", async () => {
+    const phone = $("phone").value.trim();
+
+    if (!phone.startsWith("+")) {
+      showStatus("Enter your full number with country code, e.g. +2547XXXXXXXX.");
+      return;
+    }
+
+    try {
+      $("sendCodeBtn").disabled = true;
+      showStatus("Preparing phone verification...");
+
+      if (!recaptchaVerifier) {
+        recaptchaVerifier = new RecaptchaVerifier(
+          auth,
+          "recaptcha-container",
+          { size: "normal" }
+        );
+
+        await recaptchaVerifier.render();
+      }
+
+      confirmationResult = await signInWithPhoneNumber(
+        auth,
+        phone,
+        recaptchaVerifier
+      );
+
+      showStatus("SMS sent! Enter the verification code.");
+    } catch (error) {
+      showStatus("SMS verification failed: " + error.message);
+
+      if (recaptchaVerifier) {
+        try {
+          await recaptchaVerifier.clear();
+        } catch (_) {}
+
+        recaptchaVerifier = null;
+      }
+    } finally {
+      $("sendCodeBtn").disabled = false;
+    }
+  });
+
+  // Verify SMS code
+  $("verifyBtn").addEventListener("click", async () => {
+    if (!confirmationResult) {
+      showStatus("Click Send SMS code first.");
+      return;
+    }
+
+    const code = $("smsCode").value.trim();
+
+    if (!code) {
+      showStatus("Enter the SMS verification code.");
+      return;
+    }
+
+    try {
+      await confirmationResult.confirm(code);
+      showStatus("Phone number verified!");
+    } catch (error) {
+      showStatus("Verification failed: " + error.message);
+    }
+  });
+
+  // Sign out
+  $("logoutBtn").addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+      showStatus("You have signed out.");
+    } catch (error) {
+      showStatus(error.message);
+    }
+  });
+
+  $("sellBtn").addEventListener("click", () => {
+    window.location.href = "sell.html";
+  });
+
+  $("homeBtn").addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+
+  // Show the account page after sign-in and update streak.
+  onAuthStateChanged(auth, async user => {
+    $("signedOut").classList.toggle("hidden", Boolean(user));
+    $("signedIn").classList.toggle("hidden", !user);
+
+    if (user) {
+      $("welcome").textContent =
+        "Signed in as " +
+        (user.displayName || user.email || user.phoneNumber || "ShambaMarket user") +
+        ".";
+
+      await updateStreak(user);
+    }
+  });
+</script>
+</body>
+</html>
