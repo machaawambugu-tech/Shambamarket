@@ -1,26 +1,99 @@
 
-<div class="field">
-  <label for="produce">Crop or produce name</label>
-  <input
-    id="produce"
-    type="text"
-    list="cropSuggestions"
-    placeholder="e.g. Cassava, Dragon fruit, Sorghum..."
-    required
-    maxlength="60"
-  >
-  <datalist id="cropSuggestions">
-    <option value="Maize">
-    <option value="Tomatoes">
-    <option value="Potatoes">
-    <option value="Beans">
-    <option value="Cassava">
-    <option value="Sorghum">
-    <option value="Sweet potatoes">
-    <option value="Dragon fruit">
-    <option value="Avocados">
-    <option value="Onions">
-  </datalist>
-</div>
+const sellForm = document.getElementById("sellForm");
+const cropPhoto = document.getElementById("cropPhoto");
+const photoPreview = document.getElementById("photoPreview");
 
+// Preview the farmer's photo before listing it.
+cropPhoto.addEventListener("change", function () {
+  const file = this.files[0];
 
+  photoPreview.hidden = true;
+  photoPreview.removeAttribute("src");
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    alert("Please choose an image file.");
+    this.value = "";
+    return;
+  }
+
+  if (file.size > 3 * 1024 * 1024) {
+    alert("Please choose a photo smaller than 3 MB.");
+    this.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function () {
+    photoPreview.src = reader.result;
+    photoPreview.hidden = false;
+  };
+
+  reader.readAsDataURL(file);
+});
+
+sellForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const name = document.getElementById("produce").value.trim();
+  const farmer = document.getElementById("farmer").value.trim();
+  const quantity = Number(document.getElementById("quantity").value);
+  const price = Number(document.getElementById("price").value);
+  const location = document.getElementById("farmLocation").value.trim();
+  const file = cropPhoto.files[0];
+
+  if (!name || !farmer || !location || quantity <= 0 || price <= 0) {
+    alert("Please complete all fields with valid values.");
+    return;
+  }
+
+  if (file && (
+    !file.type.startsWith("image/") ||
+    file.size > 3 * 1024 * 1024
+  )) {
+    alert("Choose a valid image smaller than 3 MB.");
+    return;
+  }
+
+  function addListing(imageData = "") {
+    products.unshift({
+      name: name,
+      farmer: farmer,
+      quantity: quantity,
+      price: price,
+      location: location,
+      imageData: imageData,
+      emoji: emojis[name] || "🌱"
+    });
+
+    renderProducts();
+    sellForm.reset();
+    photoPreview.hidden = true;
+    photoPreview.removeAttribute("src");
+
+    document.getElementById("formMessage").textContent =
+      "✅ Your crop listing has been added!";
+
+    document.getElementById("market").scrollIntoView({
+      behavior: "smooth"
+    });
+  }
+
+  if (file) {
+    const reader = new FileReader();
+
+    reader.onload = function () {
+      addListing(reader.result);
+    };
+
+    reader.onerror = function () {
+      alert("Sorry, the photo could not be read. Please try again.");
+    };
+
+    reader.readAsDataURL(file);
+  } else {
+    addListing();
+  }
+});
