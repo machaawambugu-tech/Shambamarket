@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShambaMarket</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e8f5e9;
+      color: #174d27;
+      text-align: center;
+      padding: 40px 15px;
+    }
+    .card {
+      background: white;
+      padding: 25px;
+      margin: 25px auto;
+      max-width: 500px;
+      border-radius: 16px;
+    }
+    button {
+      background: #176b2c;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    body.dark {
+      background: #17231a;
+      color: #f1f8f1;
+    }
+    body.dark .card {
+      background: #26372a;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌾 ShambaMarket</h1>
+  <p>Connecting Kenyan Farmers With Buyers</p>
+
+  <div class="card">
+    <h2>Welcome to our marketplace!</h2>
+    <p>Fresh produce. Fair prices. Better connections.</p>
+    <button onclick="toggleDark()">🌙 Toggle Dark Mode</button>
+  </div>
+
+  <script>
+    function toggleDark() {
+      document.body.classList.toggle("dark");
+    }
+  </script>
+</body>
+</html>
