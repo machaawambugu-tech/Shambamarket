@@ -79,3 +79,57 @@
   position: relative;
   z-index: 1;
 }
+/* SHAMBAMARKET login photo slideshow */
+.auth-photo {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: #183d28;
+}
+
+.auth-slides {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.auth-slides img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  animation: farmSlide 18s infinite;
+}
+
+.auth-slides img:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.auth-slides img:nth-child(2) {
+  animation-delay: 6s;
+}
+
+.auth-slides img:nth-child(3) {
+  animation-delay: 12s;
+}
+
+@keyframes farmSlide {
+  0%, 30% {
+    opacity: 1;
+  }
+  36%, 100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-slides img {
+    animation: none;
+  }
+
+  .auth-slides img:first-child {
+    opacity: 1;
+  }
+}
