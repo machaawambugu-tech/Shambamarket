@@ -5,339 +5,825 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101b2d">
-  <meta name="description" content="ShambaMarket connects Kenyan farmers, buyers and agricultural service providers.">
-  <title>ShambaMarket — Kenya's Agricultural Marketplace</title>
-  <link rel="stylesheet" href="./style.css">
+  <meta name="description" content="Shop agricultural products, find farmers, and discover farm supplies and services across Kenya.">
+
+  <title>ShambaMarket | Kenya's Agricultural Marketplace</title>
+
+  <!-- Keep all four existing stylesheets -->
+  <link rel="stylesheet" href="./design.css">
+  <link rel="stylesheet" href="./soko.css">
+  <link rel="stylesheet" href="./shamba.css">
+  <link rel="stylesheet" href="./mobile.css">
+
+  <style>
+    [hidden] { display: none !important; }
+
+    :root {
+      --sm-navy: #101b2d;
+      --sm-ivory: #f8f5ee;
+      --sm-coral: #ff6b5e;
+      --sm-teal: #2a9d8f;
+    }
+
+    body {
+      background: var(--sm-ivory);
+      color: var(--sm-navy);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    input, select, textarea {
+      box-sizing: border-box;
+      max-width: 100%;
+    }
+
+    .sm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 16px 5%;
+      background: var(--sm-navy);
+      color: white;
+    }
+
+    .sm-brand {
+      color: white;
+      text-decoration: none;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .sm-brand span { color: var(--sm-coral); }
+
+    .sm-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sm-nav button, .sm-header button {
+      padding: 9px 12px;
+      border: 1px solid #ffffff30;
+      border-radius: 8px;
+      color: white;
+      background: transparent;
+    }
+
+    .sm-main {
+      width: min(1200px, 92%);
+      margin: 24px auto 60px;
+    }
+
+    .sm-hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      align-items: center;
+      padding: clamp(24px, 5vw, 60px);
+      border-radius: 20px;
+      background: var(--sm-navy);
+      color: white;
+    }
+
+    .sm-hero h1 { font-size: clamp(2rem, 5vw, 4rem); }
+    .sm-hero p { line-height: 1.7; }
+
+    .sm-primary {
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 9px;
+      background: var(--sm-coral);
+      color: var(--sm-navy);
+      font-weight: 700;
+    }
+
+    .sm-secondary {
+      padding: 10px 14px;
+      border: 1px solid #c8c8c8;
+      border-radius: 8px;
+      background: white;
+      color: var(--sm-navy);
+    }
+
+    .sm-section { margin-top: 32px; }
+
+    .sm-category-grid, .sm-product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .sm-category, .sm-product-card, .sm-panel {
+      padding: 18px;
+      border: 1px solid #e3e0d8;
+      border-radius: 14px;
+      background: white;
+    }
+
+    .sm-category { text-align: left; }
+    .sm-category:hover { border-color: var(--sm-teal); }
+
+    .sm-filter-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .sm-filter-bar input, .sm-filter-bar select,
+    .sm-form input, .sm-form select, .sm-form textarea {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #c8c8c8;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .sm-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .sm-form label { font-weight: 600; }
+
+    .sm-password {
+      display: flex;
+      gap: 8px;
+    }
+
+    .sm-password input { flex: 1; min-width: 0; }
+
+    .sm-auth-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .sm-slideshow {
+      position: relative;
+      min-height: 360px;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--sm-navy);
+      color: white;
+    }
+
+    .sm-slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+
+    .sm-slide.active { opacity: 1; }
+
+    .sm-slide-caption {
+      position: absolute;
+      inset: auto 0 0;
+      padding: 28px;
+      background: linear-gradient(transparent, #101b2de8);
+      z-index: 1;
+    }
+
+    .sm-auth-card {
+      padding: clamp(20px, 4vw, 36px);
+      border: 1px solid #e3e0d8;
+      border-radius: 16px;
+      background: white;
+    }
+
+    .sm-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 18px 0;
+    }
+
+    .sm-tabs button {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+    }
+
+    .sm-tabs button[aria-pressed="true"] {
+      background: var(--sm-navy);
+      color: white;
+    }
+
+    .sm-link {
+      border: 0;
+      padding: 4px 0;
+      background: transparent;
+      color: #176d65;
+      text-decoration: underline;
+    }
+
+    .sm-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .sm-status {
+      min-height: 1.5em;
+      overflow-wrap: anywhere;
+    }
+
+    .sm-muted { color: #606977; }
+    .sm-price { color: #176d65; font-weight: 800; }
+    .sm-photo { width: 100%; max-height: 230px; object-fit: cover; border-radius: 10px; }
+    .sm-footer { padding: 24px; text-align: center; color: #626a75; }
+
+    @media (max-width: 760px) {
+      .sm-auth-layout, .sm-hero { grid-template-columns: 1fr; }
+      .sm-slideshow { min-height: 240px; }
+      .sm-nav { width: 100%; }
+    }
+  </style>
+
+  <script type="module" src="./app.js"></script>
 </head>
+
 <body>
-  <header class="site-header">
-    <a class="brand" href="./index.html" aria-label="ShambaMarket home">
-      <span class="brand-mark">🌱</span>
-      <span>ShambaMarket</span>
+  <a href="#main-content">Skip to content</a>
+
+  <!-- GLOBAL HEADER -->
+  <header class="sm-header">
+    <a href="#" class="sm-brand" id="brand-home">
+      SHAMBA<span>MARKET</span>
     </a>
-    <button id="theme-toggle" type="button">Dark Mode</button>
+
+    <nav class="sm-nav" aria-label="Main navigation">
+      <button type="button" data-page="market-page">Marketplace</button>
+      <button type="button" data-protected="true" data-page="farmer-page">Sell products</button>
+      <button type="button" data-protected="true" data-page="cart-page">
+        Cart (<span id="cart-count">0</span>)
+      </button>
+      <button type="button" data-protected="true" data-page="messages-page">Messages</button>
+      <button type="button" data-protected="true" data-page="settings-page">Account</button>
+    </nav>
+
+    <div class="sm-actions">
+      <span id="account-label">Browsing as guest</span>
+      <button type="button" id="logout-button" hidden>Log out</button>
+      <button type="button" id="header-login-button">Log in</button>
+    </div>
   </header>
 
-  <main>
-    <!-- AUTHENTICATION -->
-    <section id="auth-page" class="auth-page">
-      <div class="auth-card">
-        <p class="eyebrow">KENYA'S AGRICULTURAL MARKETPLACE</p>
-        <h1 id="auth-title">Welcome back</h1>
-        <p id="auth-description">Sign in to explore ShambaMarket.</p>
+  <main id="main-content" class="sm-main">
 
-        <div class="auth-tabs">
-          <button id="show-login" class="active" type="button">Sign in</button>
-          <button id="show-signup" type="button">Create account</button>
-        </div>
-
-        <form id="auth-form">
-          <div id="signup-fields" hidden>
-            <label for="auth-name">Full name</label>
-            <input id="auth-name" name="name" autocomplete="name"
-                   placeholder="Your full name">
-
-            <label for="auth-role">Account type</label>
-            <select id="auth-role" name="role">
-              <option value="customer">Buyer</option>
-              <option value="farmer">Farmer / Seller</option>
-            </select>
-          </div>
-
-          <label for="auth-email">Email address</label>
-          <input id="auth-email" name="email" type="email"
-                 autocomplete="email" required placeholder="you@example.com">
-
-          <label for="auth-password">Password</label>
-          <input id="auth-password" name="password" type="password"
-                 autocomplete="current-password" minlength="6"
-                 required placeholder="Enter your password">
-
-          <button id="auth-submit" class="button button-primary"
-                  type="submit">Sign in</button>
-
-          <p id="auth-status" role="status" aria-live="polite"></p>
-        </form>
-
-        <p class="muted">
-          New account? Create one, then confirm your email if requested.
-        </p>
-      </div>
-    </section>
-
-    <!-- APPLICATION -->
-    <div id="app-shell" hidden>
-      <aside class="sidebar">
-        <a class="brand" href="./index.html">🌱 ShambaMarket</a>
-
-        <nav aria-label="Main navigation">
-          <button class="nav-link active" data-page="market" type="button">
-            Marketplace
-          </button>
-          <button class="nav-link" data-page="farmer" type="button">
-            Sell products
-          </button>
-          <button class="nav-link" data-page="cart" type="button">
-            My cart (<span id="cart-count">0</span>)
-          </button>
-          <button class="nav-link" data-page="messages" type="button">
-            Messages
-          </button>
-          <button class="nav-link" data-page="settings" type="button">
-            Settings
-          </button>
-        </nav>
-
-        <div class="sidebar-account">
-          <span>Signed in as</span>
-          <strong id="account-label">Member</strong>
-          <button id="logout-button" type="button">Sign out</button>
-        </div>
-      </aside>
-
-      <div class="main-content">
-        <!-- MARKETPLACE -->
-        <section id="market-page" class="app-page active">
-          <div class="hero">
-            <p class="eyebrow">GROW. CONNECT. TRADE.</p>
-            <h1>From farm to market.</h1>
-            <p>Discover agricultural products, equipment, livestock and services across Kenya.</p>
-            <button id="sell-button" class="button button-primary" type="button">
+    <!-- PUBLIC MARKETPLACE: DOES NOT REQUIRE SIGN-IN -->
+    <section id="market-page" class="app-page">
+      <section class="sm-hero">
+        <div>
+          <p>KENYA'S AGRICULTURAL MARKETPLACE</p>
+          <h1>From farm to market.</h1>
+          <p>
+            Discover fresh produce, grains, legumes, livestock,
+            farm equipment, agricultural inputs and farm services.
+          </p>
+          <div class="sm-actions">
+            <button class="sm-primary" type="button" id="hero-browse-button">
+              Explore products
+            </button>
+            <button class="sm-secondary" type="button" id="hero-sell-button">
               Sell on ShambaMarket
             </button>
           </div>
+        </div>
 
-          <section class="panel">
-            <h2>Explore departments</h2>
-            <div id="market-category-grid" class="category-grid">
-              <button data-market-category="All" type="button">All products</button>
-              <button data-market-category="Fresh Produce" type="button">🍎 Fresh Produce</button>
-              <button data-market-category="Crops & Grains" type="button">🌾 Crops & Grains</button>
-              <button data-market-category="Farm Tools & Equipment" type="button">🚜 Farm Tools & Equipment</button>
-              <button data-market-category="Agricultural Inputs & Fertilizers" type="button">🌱 Agricultural Inputs</button>
-              <button data-market-category="Livestock & Poultry" type="button">🐄 Livestock & Poultry</button>
-              <button data-market-category="Animal & Farm Products" type="button">🥚 Animal & Farm Products</button>
-              <button data-market-category="Farm Services" type="button">🛠️ Farm Services</button>
-            </div>
-          </section>
+        <div>
+          <img
+            class="sm-photo"
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=85"
+            alt="Green fields on a farm"
+          >
+        </div>
+      </section>
 
-          <section id="marketplace" class="panel">
-            <h2>Find agricultural products</h2>
+      <section class="sm-section" aria-labelledby="category-heading">
+        <h2 id="category-heading">Shop by category</h2>
 
-            <div class="filter-grid">
-              <label>
-                Search
-                <input id="search-input" type="search"
-                       placeholder="Search products, sellers or locations">
-              </label>
+        <div id="category-list" class="sm-category-grid">
+          <button class="sm-category" type="button" data-category="Fruits">🍎 Fruits</button>
+          <button class="sm-category" type="button" data-category="Vegetables">🥬 Vegetables</button>
+          <button class="sm-category" type="button" data-category="Nuts">🥜 Nuts</button>
+          <button class="sm-category" type="button" data-category="Starchy Foods">🥔 Starchy Foods</button>
+          <button class="sm-category" type="button" data-category="Grains">🌾 Grains</button>
+          <button class="sm-category" type="button" data-category="Cereals">🌽 Cereals</button>
+          <button class="sm-category" type="button" data-category="Legumes">🫘 Legumes</button>
+          <button class="sm-category" type="button" data-category="Spices">🌶️ Spices</button>
+          <button class="sm-category" type="button" data-category="Herbal Products">🌿 Herbal Products</button>
+          <button class="sm-category" type="button" data-category="Farm Tools & Equipment">🛠️ Farm Tools & Equipment</button>
+          <button class="sm-category" type="button" data-category="Agricultural Inputs & Fertilizers">🌱 Agricultural Inputs & Fertilizers</button>
+          <button class="sm-category" type="button" data-category="Livestock & Poultry">🐄 Livestock & Poultry</button>
+          <button class="sm-category" type="button" data-category="Animal & Farm Products">🥚 Animal & Farm Products</button>
+          <button class="sm-category" type="button" data-category="Farm Services">🚜 Farm Services</button>
+        </div>
+      </section>
 
-              <label>
-                County
-                <select id="county-filter">
-                  <option value="">All counties</option>
-                </select>
-              </label>
+      <section class="sm-section" id="marketplace">
+        <h2>Available products and services</h2>
+        <p class="sm-muted">
+          Browse public listings. Sign in only when you need to use protected features.
+        </p>
 
-              <label>
-                Sort by
-                <select id="sort-products">
-                  <option value="newest">Newest first</option>
-                  <option value="price-low">Price: low to high</option>
-                  <option value="price-high">Price: high to low</option>
-                </select>
-              </label>
-            </div>
+        <div class="sm-filter-bar">
+          <input id="search-input" type="search" placeholder="Search products..." aria-label="Search products">
+          <select id="county-filter" aria-label="Filter by county">
+            <option value="">All counties</option>
+            <option>Nairobi</option>
+            <option>Kiambu</option>
+            <option>Nakuru</option>
+            <option>Uasin Gishu</option>
+            <option>Meru</option>
+            <option>Kisumu</option>
+            <option>Machakos</option>
+            <option>Nyeri</option>
+            <option>Kirinyaga</option>
+            <option>Mombasa</option>
+            <option>Other</option>
+          </select>
+          <select id="sort-filter" aria-label="Sort listings">
+            <option value="newest">Newest listings</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+            <option value="name">Product name</option>
+          </select>
+        </div>
 
-            <div id="category-list" class="category-list"></div>
-            <p id="market-status" role="status" aria-live="polite"></p>
-            <p id="listing-summary">0 listings found</p>
-            <p id="empty-message" class="muted" hidden>
-              No matching listings yet. Try another category or search.
-            </p>
-            <div id="product-list" class="product-grid"></div>
-          </section>
-        </section>
+        <div id="market-status" class="sm-status" role="status" aria-live="polite">
+          Loading marketplace listings...
+        </div>
 
-        <!-- PRODUCT DETAILS -->
-        <section id="details-page" class="app-page" hidden>
-          <button id="details-back-button" class="button button-outline" type="button">
-            ← Back to marketplace
-          </button>
-          <div id="product-details-content"></div>
-        </section>
+        <div id="product-list" class="sm-product-grid"></div>
+        <div id="product-pagination" class="sm-actions"></div>
+      </section>
+    </section>
 
-        <!-- FARMER DASHBOARD -->
-        <section id="farmer-page" class="app-page" hidden>
-          <div class="page-heading">
-            <p class="eyebrow">SELLER DASHBOARD</p>
-            <h1>Manage your farm listings</h1>
-            <p>Welcome, <strong id="farmer-name">Farmer</strong>.</p>
+    <!-- PRODUCT DETAILS -->
+    <section id="details-page" class="app-page sm-panel" hidden>
+      <button type="button" data-page="market-page" class="sm-secondary">← Back to marketplace</button>
+      <div id="product-details">
+        <h2>Product details</h2>
+      </div>
+      <div class="sm-actions">
+        <button type="button" id="details-add-cart" class="sm-primary">Add to cart</button>
+        <button type="button" id="details-message-farmer" class="sm-secondary">Message farmer</button>
+      </div>
+    </section>
+
+    <!-- FARMER / SELLER LISTING FORM -->
+    <section id="farmer-page" class="app-page sm-panel" hidden>
+      <h1>List a product or service</h1>
+      <p>Create a listing for buyers to discover. You must be signed in.</p>
+
+      <form id="product-form" class="sm-form">
+        <label for="product-name">Product or service name</label>
+        <input id="product-name" name="product_name" required maxlength="120">
+
+        <label for="product-category">Department</label>
+        <select id="product-category" name="category" required>
+          <option value="">Choose a department</option>
+          <option>Fresh Produce</option>
+          <option>Crops & Grains</option>
+          <option>Farm Tools & Equipment</option>
+          <option>Agricultural Inputs & Fertilizers</option>
+          <option>Livestock & Poultry</option>
+          <option>Animal & Farm Products</option>
+          <option>Farm Services</option>
+        </select>
+
+        <label for="product-subcategory">Product category</label>
+        <select id="product-subcategory" name="subcategory" required>
+          <option value="">Choose a category</option>
+          <option>Fruits</option>
+          <option>Vegetables</option>
+          <option>Nuts</option>
+          <option>Starchy Foods</option>
+          <option>Grains</option>
+          <option>Cereals</option>
+          <option>Legumes</option>
+          <option>Spices</option>
+          <option>Herbal Products</option>
+          <option>Farm Tools & Equipment</option>
+          <option>Agricultural Inputs & Fertilizers</option>
+          <option>Livestock & Poultry</option>
+          <option>Animal & Farm Products</option>
+          <option>Farm Services</option>
+        </select>
+
+        <label for="product-price">Price (KES)</label>
+        <input id="product-price" name="price" type="number" min="0" step="0.01" required>
+
+        <label for="product-quantity">Available quantity</label>
+        <input id="product-quantity" name="quantity" type="number" min="0" step="0.01" required>
+
+        <label for="product-unit">Unit</label>
+        <select id="product-unit" name="unit" required>
+          <option value="">Choose a unit</option>
+          <option>kg</option>
+          <option>gram</option>
+          <option>tonne</option>
+          <option>bag</option>
+          <option>crate</option>
+          <option>piece</option>
+          <option>bunch</option>
+          <option>litre</option>
+          <option>animal</option>
+          <option>service</option>
+          <option>hour</option>
+          <option>acre</option>
+        </select>
+
+        <label for="product-condition">Condition</label>
+        <select id="product-condition" name="condition">
+          <option value="new">New / fresh</option>
+          <option value="used">Used</option>
+          <option value="not-applicable">Not applicable</option>
+        </select>
+
+        <label for="product-county">County</label>
+        <select id="product-county" name="county" required>
+          <option value="">Choose county</option>
+          <option>Nairobi</option><option>Kiambu</option>
+          <option>Nakuru</option><option>Uasin Gishu</option>
+          <option>Meru</option><option>Kisumu</option>
+          <option>Machakos</option><option>Nyeri</option>
+          <option>Kirinyaga</option><option>Mombasa</option>
+          <option>Other</option>
+        </select>
+
+        <label for="product-town">Town / area</label>
+        <input id="product-town" name="town" maxlength="100">
+
+        <label for="product-phone">Contact phone</label>
+        <input id="product-phone" name="phone" type="tel" autocomplete="tel">
+
+        <label for="product-photo">Product photo</label>
+        <input id="product-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp">
+
+        <label for="product-description">Description</label>
+        <textarea id="product-description" name="description" rows="5" maxlength="3000" required></textarea>
+
+        <button type="submit" class="sm-primary">Publish listing</button>
+        <p id="product-form-status" class="sm-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <!-- CART -->
+    <section id="cart-page" class="app-page sm-panel" hidden>
+      <h1>My cart</h1>
+      <div id="cart-items"></div>
+      <p id="cart-subtotal" class="sm-price">Subtotal: KES 0</p>
+      <p class="sm-muted">
+        The subtotal is an estimate. Payment and delivery are not confirmed by this cart.
+      </p>
+      <button type="button" id="clear-cart-button" class="sm-secondary">Clear cart</button>
+      <button type="button" id="place-order-button" class="sm-primary">Continue with order enquiry</button>
+      <p id="cart-status" class="sm-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- MESSAGES -->
+    <section id="messages-page" class="app-page sm-panel" hidden>
+      <h1>Messages</h1>
+      <p>Contact farmers and buyers after signing in.</p>
+      <div id="conversation-list"></div>
+      <div id="message-thread"></div>
+
+      <form id="message-form" class="sm-form">
+        <label for="message-input">Your message</label>
+        <textarea id="message-input" rows="3" maxlength="4000" required></textarea>
+        <button type="submit" class="sm-primary">Send message</button>
+      </form>
+      <p id="message-status" class="sm-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- ACCOUNT SETTINGS -->
+    <section id="settings-page" class="app-page sm-panel" hidden>
+      <h1>Account settings</h1>
+      <p id="settings-account-name"></p>
+      <p id="settings-account-email"></p>
+
+      <form id="settings-form" class="sm-form">
+        <label for="settings-name">Display name</label>
+        <input id="settings-name" name="name" maxlength="100">
+
+        <label for="settings-phone">Phone number</label>
+        <input id="settings-phone" name="phone" type="tel">
+
+        <button type="submit" class="sm-primary">Save settings</button>
+      </form>
+      <p id="settings-status" class="sm-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <!-- AUTHENTICATION: LOGIN / SIGNUP -->
+    <section id="auth-page" class="app-page" hidden>
+      <div class="sm-auth-layout">
+        <div class="sm-slideshow" aria-label="Agricultural slideshow">
+          <img class="sm-slide active"
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=85"
+            alt="Green agricultural fields">
+          <img class="sm-slide"
+            src="https://images.unsplash.com/photo-1499529112087-3cb3b73b6cfd?auto=format&fit=crop&w=1200&q=85"
+            alt="Crops growing on a farm">
+          <img class="sm-slide"
+            src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=85"
+            alt="Agricultural countryside">
+
+          <div class="sm-slide-caption">
+            <h2>Grow. Connect. Trade.</h2>
+            <p>Bringing Kenyan farmers and buyers together.</p>
+          </div>
+        </div>
+
+        <div class="sm-auth-card">
+          <h1 id="auth-title">Welcome to ShambaMarket</h1>
+          <p id="auth-description">Sign in or create an account to continue.</p>
+
+          <div class="sm-tabs">
+            <button type="button" id="show-login" aria-pressed="true">Log in</button>
+            <button type="button" id="show-signup" aria-pressed="false">Create account</button>
           </div>
 
-          <form id="product-form" class="panel">
-            <h2>Publish a product or service</h2>
+          <form id="auth-form" class="sm-form">
+            <div id="signup-fields" hidden>
+              <label for="auth-name">Full name</label>
+              <input id="auth-name" name="name" autocomplete="name">
 
-            <label for="product-category">Department</label>
-            <select id="product-category" required>
-              <option value="">Choose a department</option>
-            </select>
+              <label for="auth-role">Account type</label>
+              <select id="auth-role" name="role">
+                <option value="customer">Buyer</option>
+                <option value="farmer">Farmer / Seller</option>
+              </select>
+            </div>
 
-            <label for="product-subcategory">Category</label>
-            <select id="product-subcategory" required>
-              <option value="">Choose a category</option>
-            </select>
+            <label for="auth-email">Email address</label>
+            <input id="auth-email" name="email" type="email" autocomplete="email" required>
 
-            <label for="product-name">Product or service name</label>
-            <input id="product-name" required maxlength="150"
-                   placeholder="e.g. Fresh Hass avocados">
+            <label for="auth-password">Password</label>
+            <div class="sm-password">
+              <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="6" required>
+              <button type="button" id="toggle-password" class="sm-secondary" aria-pressed="false">Show</button>
+            </div>
 
-            <div id="dynamic-product-fields"></div>
-
-            <div class="form-grid">
-              <div>
-                <label for="product-price">Price (KES)</label>
-                <input id="product-price" type="number" min="0"
-                       step="0.01" required placeholder="Price per unit">
-              </div>
-
-              <div>
-                <label for="product-quantity">Available quantity</label>
-                <input id="product-quantity" type="number" min="0.01"
-                       step="any" required placeholder="Quantity available">
+            <div id="signup-password-field" hidden>
+              <label for="signup-password-confirm">Confirm password</label>
+              <div class="sm-password">
+                <input id="signup-password-confirm" type="password" autocomplete="new-password" minlength="6">
+                <button type="button" id="toggle-signup-password" class="sm-secondary" aria-pressed="false">Show</button>
               </div>
             </div>
 
-            <label for="product-unit">Unit</label>
-            <select id="product-unit" required>
-              <option value="kg">Kilograms (kg)</option>
-              <option value="bag">Bags</option>
-              <option value="crate">Crates</option>
-              <option value="piece">Pieces</option>
-              <option value="bunch">Bunches</option>
-              <option value="litre">Litres</option>
-            </select>
+            <button type="submit" id="auth-submit" class="sm-primary">Log in</button>
 
-            <label for="product-condition">Condition</label>
-            <select id="product-condition">
-              <option value="Good">Good</option>
-              <option value="New">New</option>
-              <option value="Used">Used</option>
-              <option value="Refurbished">Refurbished</option>
-            </select>
-
-            <div class="form-grid">
-              <div>
-                <label for="product-county">County</label>
-                <select id="product-county" required>
-                  <option value="">Choose county</option>
-                </select>
-              </div>
-
-              <div>
-                <label for="product-town">Town / area</label>
-                <input id="product-town" maxlength="100"
-                       placeholder="e.g. Eldoret">
-              </div>
+            <div class="sm-actions">
+              <button type="button" id="forgot-password-button" class="sm-link">Forgot password?</button>
+              <button type="button" id="show-admin-login" class="sm-link">Administrator access</button>
             </div>
 
-            <label for="product-photo">Product photo</label>
-            <input id="product-photo" type="file"
-                   accept="image/jpeg,image/png,image/webp">
-            <div id="photo-preview" hidden></div>
-            <p class="muted">JPG, PNG or WebP; maximum 5 MB.</p>
-
-            <label for="product-description">Description</label>
-            <textarea id="product-description" rows="4" maxlength="3000"
-                      placeholder="Quality, variety, delivery details and other useful information"></textarea>
-
-            <button id="publish-button" class="button button-primary" type="submit">
-              Publish Product
-            </button>
-            <p id="farmer-status" role="status" aria-live="polite"></p>
+            <p id="auth-status" class="sm-status" role="status" aria-live="polite"></p>
           </form>
 
-          <section class="panel">
-            <h2>Your published listings</h2>
-            <div id="farmer-listings"></div>
+          <!-- Password recovery request -->
+          <section id="recovery-panel" hidden>
+            <h2>Reset your password</h2>
+            <p>Enter your account email and we'll request a recovery link.</p>
+
+            <form id="recovery-form" class="sm-form">
+              <label for="recovery-email">Email address</label>
+              <input id="recovery-email" type="email" autocomplete="email" required>
+              <button type="submit" class="sm-primary">Send recovery email</button>
+            </form>
+
+            <p id="recovery-status" class="sm-status" role="status" aria-live="polite"></p>
+            <button type="button" id="back-to-login" class="sm-link">Back to login</button>
           </section>
-        </section>
 
-        <!-- CART -->
-        <section id="cart-page" class="app-page" hidden>
-          <h1>My cart</h1>
-          <p class="muted">
-            Review quantities and contact sellers to confirm stock, delivery and payment.
-          </p>
-          <div id="cart-items"></div>
+          <!-- Set a new password after opening the recovery link -->
+          <section id="new-password-panel" hidden>
+            <h2>Choose a new password</h2>
+            <form id="new-password-form" class="sm-form">
+              <label for="new-password">New password</label>
+              <input id="new-password" type="password" minlength="8" autocomplete="new-password" required>
 
-          <div class="panel">
-            <h2>Estimated subtotal</h2>
-            <p id="cart-subtotal">KES 0</p>
-            <p class="muted">This is not a payment or confirmed order.</p>
-            <p id="cart-status" role="status" aria-live="polite"></p>
-            <button id="cart-contact-button" class="button button-primary" type="button">
-              Enquire on WhatsApp
-            </button>
-            <button id="cart-continue-button" class="button button-outline" type="button">
-              Continue shopping
-            </button>
-          </div>
-        </section>
+              <label for="new-password-confirm">Confirm new password</label>
+              <input id="new-password-confirm" type="password" minlength="8" autocomplete="new-password" required>
 
-        <!-- MESSAGES -->
-        <section id="messages-page" class="app-page" hidden>
-          <h1>Direct messages</h1>
-          <p class="muted">
-            Contact buyers and sellers directly through ShambaMarket.
-          </p>
-          <p id="messages-status" role="status" aria-live="polite"></p>
+              <button type="submit" class="sm-primary">Update password</button>
+            </form>
+            <p id="new-password-status" class="sm-status" role="status" aria-live="polite"></p>
+          </section>
 
-          <div class="messages-layout">
-            <aside class="panel">
-              <h2>Conversations</h2>
-              <div id="conversation-list"></div>
-            </aside>
-
-            <section class="panel">
-              <h2 id="conversation-header">Select a conversation</h2>
-              <div id="message-list" class="message-list"
-                   aria-live="polite"></div>
-
-              <form id="message-form">
-                <label for="message-input">Your message</label>
-                <textarea id="message-input" rows="3" maxlength="4000"
-                          placeholder="Write a message..." required></textarea>
-                <button id="send-message-button" class="button button-primary"
-                        type="submit">Send message</button>
-              </form>
-            </section>
-          </div>
-          <p class="muted">
-            Messages are protected by access controls, but are not end-to-end encrypted.
-          </p>
-        </section>
-
-        <!-- SETTINGS -->
-        <section id="settings-page" class="app-page" hidden>
-          <h1>Settings</h1>
-          <div class="panel">
-            <h2>Your account</h2>
-            <p>Account: <strong id="settings-account-name">Member</strong></p>
-            <button id="settings-logout" class="button button-outline" type="button">
-              Sign out
-            </button>
-          </div>
-        </section>
+          <hr>
+          <p>Want to explore first?</p>
+          <button type="button" id="browse-public-button" class="sm-secondary">
+            Browse without signing in
+          </button>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <!-- SEPARATE ADMIN AUTHENTICATION SCREEN -->
+    <section id="admin-login-page" class="app-page sm-panel" hidden>
+      <h1>Administrator access</h1>
+      <p>
+        This screen is for authorised administrators only.
+        A matching email address alone does not grant administrator privileges.
+      </p>
+
+      <form id="admin-login-form" class="sm-form">
+        <label for="admin-email">Administrator email</label>
+        <input id="admin-email" type="email" autocomplete="username" required>
+
+        <label for="admin-password">Password</label>
+        <div class="sm-password">
+          <input id="admin-password" type="password" autocomplete="current-password" required>
+          <button type="button" id="toggle-admin-password" class="sm-secondary">Show</button>
+        </div>
+
+        <button type="submit" id="admin-login-submit" class="sm-primary">
+          Sign in
+        </button>
+        <p id="admin-login-status" class="sm-status" role="status" aria-live="polite"></p>
+      </form>
+
+      <button type="button" id="back-to-auth" class="sm-link">Back to regular sign in</button>
+    </section>
+
+    <!-- ADMIN DASHBOARD PLACEHOLDER -->
+    <section id="admin-page" class="app-page sm-panel" hidden>
+      <h1>Administrator dashboard</h1>
+      <p id="admin-status" role="status">Checking administrator permissions...</p>
+      <div id="admin-content"></div>
+    </section>
+
   </main>
 
-  <footer class="site-footer">
-    <p>© <span id="current-year"></span> ShambaMarket · Connecting Kenyan agriculture.</p>
+  <footer class="sm-footer">
+    <p>© <span id="current-year">2026</span> ShambaMarket. Connecting Kenyan agriculture.</p>
+    <p>Buy locally. Sell confidently. Grow together.</p>
   </footer>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
 
-  <script type="module" src="./app.js"></script>
+  <!-- UI helpers. Authentication and data operations belong in app.js. -->
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+
+      $("current-year").textContent = new Date().getFullYear();
+
+      // Password visibility buttons
+      function attachPasswordToggle(buttonId, inputId) {
+        const button = $(buttonId);
+        const input = $(inputId);
+        if (!button || !input) return;
+
+        button.addEventListener("click", () => {
+          const reveal = input.type === "password";
+          input.type = reveal ? "text" : "password";
+          button.textContent = reveal ? "Hide" : "Show";
+          button.setAttribute("aria-pressed", String(reveal));
+        });
+      }
+
+      attachPasswordToggle("toggle-password", "auth-password");
+      attachPasswordToggle("toggle-signup-password", "signup-password-confirm");
+      attachPasswordToggle("toggle-admin-password", "admin-password");
+
+      // Rotate slideshow images
+      document.querySelectorAll(".sm-slideshow").forEach((slideshow) => {
+        const slides = [...slideshow.querySelectorAll(".sm-slide")];
+        if (slides.length < 2) return;
+
+        let index = 0;
+        window.setInterval(() => {
+          slides[index].classList.remove("active");
+          index = (index + 1) % slides.length;
+          slides[index].classList.add("active");
+        }, 4500);
+      });
+
+      // Front-end mode switching
+      function showSection(sectionId) {
+        document.querySelectorAll(".app-page").forEach((section) => {
+          section.hidden = section.id !== sectionId;
+        });
+      }
+
+      function openAuth(mode = "login") {
+        showSection("auth-page");
+        $("recovery-panel").hidden = true;
+        $("new-password-panel").hidden = true;
+        $("auth-form").hidden = false;
+        setAuthMode(mode);
+      }
+
+      function setAuthMode(mode) {
+        const signup = mode === "signup";
+        $("signup-fields").hidden = !signup;
+        $("signup-password-field").hidden = !signup;
+        $("auth-title").textContent = signup ? "Create your account" : "Welcome back";
+        $("auth-description").textContent = signup
+          ? "Join ShambaMarket as a buyer or farmer."
+          : "Sign in to manage your account and activities.";
+        $("auth-submit").textContent = signup ? "Create account" : "Log in";
+        $("auth-password").autocomplete = signup ? "new-password" : "current-password";
+        $("show-login").setAttribute("aria-pressed", String(!signup));
+        $("show-signup").setAttribute("aria-pressed", String(signup));
+        $("forgot-password-button").hidden = signup;
+      }
+
+      $("show-login").addEventListener("click", () => setAuthMode("login"));
+      $("show-signup").addEventListener("click", () => setAuthMode("signup"));
+
+      $("forgot-password-button").addEventListener("click", () => {
+        $("auth-form").hidden = true;
+        $("recovery-panel").hidden = false;
+        $("new-password-panel").hidden = true;
+        $("recovery-email").value = $("auth-email").value;
+        $("recovery-status").textContent = "";
+      });
+
+      $("back-to-login").addEventListener("click", () => openAuth("login"));
+
+      $("show-admin-login").addEventListener("click", () => {
+        showSection("admin-login-page");
+        $("admin-login-status").textContent = "";
+      });
+
+      $("back-to-auth").addEventListener("click", () => openAuth("login"));
+
+      $("browse-public-button").addEventListener("click", () => {
+        showSection("market-page");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+
+      $("header-login-button").addEventListener("click", () => openAuth("login"));
+      $("hero-sell-button").addEventListener("click", () => openAuth("login"));
+      $("brand-home").addEventListener("click", (event) => {
+        event.preventDefault();
+        showSection("market-page");
+      });
+
+      $("hero-browse-button").addEventListener("click", () => {
+        $("marketplace").scrollIntoView({ behavior: "smooth" });
+      });
+
+      // Guest visitors can browse, but protected actions require authentication.
+      document.querySelectorAll("[data-protected='true']").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (window.shambaAuth?.isSignedIn?.()) {
+            showSection(button.dataset.page);
+          } else {
+            openAuth("login");
+            $("auth-status").textContent = "Please sign in to use this feature.";
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-page]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (button.dataset.protected === "true") return;
+          showSection(button.dataset.page);
+        });
+      });
+
+      document.querySelectorAll("[data-category]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const search = $("search-input");
+          const category = button.dataset.category;
+          if (search) search.value = category;
+          $("marketplace").scrollIntoView({ behavior: "smooth" });
+          search?.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
+
+      // Start in the public marketplace, not the login screen.
+      showSection("market-page");
+
+      // Expose small UI helpers for app.js without exposing privileged credentials.
+      window.shambaUI = {
+        showSection,
+        openAuth,
+        setAuthMode
+      };
+    })();
+  </script>
 </body>
 </html>
