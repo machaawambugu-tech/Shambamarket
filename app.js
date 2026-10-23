@@ -2,14 +2,13 @@
 import { supabase } from "./supabase-config.js";
 
 /* =========================================================
-   SHAMBAMARKET — COMPLETE APPLICATION
-   Supabase authentication, marketplace, cart and messaging
+   SHAMBAMARKET — REBUILT APPLICATION
+   Marketplace • Categories • Farmer listings • Cart
+   Supabase Auth • Direct messages • Realtime • Dark mode
 ========================================================= */
 
 const DEPARTMENTS = {
-  "Fresh Produce": [
-    "Fruits", "Vegetables", "Nuts"
-  ],
+  "Fresh Produce": ["Fruits", "Vegetables", "Nuts"],
   "Crops & Grains": [
     "Starchy Foods", "Grains", "Cereals", "Legumes",
     "Spices", "Herbal Products"
@@ -21,8 +20,7 @@ const DEPARTMENTS = {
   ],
   "Agricultural Inputs & Fertilizers": [
     "Seeds", "Seedlings", "Fertilizers", "Organic Manure",
-    "Compost", "Crop Protection", "Animal Feed",
-    "Planting Materials"
+    "Compost", "Crop Protection", "Animal Feed", "Planting Materials"
   ],
   "Livestock & Poultry": [
     "Cattle", "Goats", "Sheep", "Pigs", "Chickens",
@@ -40,19 +38,12 @@ const DEPARTMENTS = {
 };
 
 const LEGACY_CATEGORIES = [
-  "Fruits", "Vegetables", "Nuts", "Starchy Foods",
-  "Grains", "Cereals", "Legumes", "Spices", "Herbal Products"
+  "Fruits", "Vegetables", "Nuts", "Starchy Foods", "Grains",
+  "Cereals", "Legumes", "Spices", "Herbal Products"
 ];
 
-const ALL_CATEGORIES = Object.values(DEPARTMENTS).flat();
-
-const AUTH_IMAGES = [
-  "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1500&q=85",
-  "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1500&q=85",
-  "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1500&q=85"
-];
-
-const CART_KEY = "shambamarket-cart-v1";
+const CATEGORIES = Object.values(DEPARTMENTS).flat();
+const CART_KEY = "shambamarket-cart-v2";
 
 const $ = (selector, parent = document) =>
   parent.querySelector(selector);
@@ -68,66 +59,92 @@ let selectedDepartment = "All";
 let selectedProduct = null;
 let cart = [];
 let authMode = "login";
-let slideshowTimer = null;
-let activeConversation = null;
 let messageChannel = null;
 let messageRefreshTimer = null;
+let activeConversation = null;
+let profileTable = "profiles";
 
-/* =========================================================
-   GENERAL HELPERS
-========================================================= */
+const KENYAN_COUNTIES = [
+  "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet",
+  "Embu", "Garissa", "Homa Bay", "Isiolo", "Kajiado",
+  "Kakamega", "Kericho", "Kiambu", "Kilifi", "Kirinyaga",
+  "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia",
+  "Lamu", "Machakos", "Makueni", "Mandera", "Marsabit",
+  "Meru", "Migori", "Mombasa", "Murang'a", "Nairobi",
+  "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
+  "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River",
+  "Tharaka-Nithi", "Trans Nzoia", "Turkana", "Uasin Gishu",
+  "Vihiga", "Wajir", "West Pokot", "Other"
+];
 
-function getValue(id) {
+/* -------------------- HELPERS -------------------- */
+
+function value(id) {
   return $(`#${id}`)?.value?.trim() || "";
 }
 
-function setText(id, value) {
+function setText(id, text) {
   const element = $(`#${id}`);
-  if (element) element.textContent = value ?? "";
+  if (element) element.textContent = text ?? "";
 }
 
-function setStatus(id, message, isError = false) {
+function status(id, message, error = false) {
   const element = $(`#${id}`);
   if (!element) return;
 
   element.textContent = message;
-  element.classList.toggle("error", isError);
+  element.classList.toggle("error", error);
   element.setAttribute("role", "status");
 }
 
-function showToast(message) {
-  const toast = $("#toast");
-  if (!toast) return;
+function toast(message) {
+  const element = $("#toast");
+  if (!element) {
+    console.log(message);
+    return;
+  }
 
-  toast.textContent = message;
-  toast.classList.add("visible", "show");
+  element.textContent = message;
+  element.classList.add("visible", "show");
 
-  clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => {
-    toast.classList.remove("visible", "show");
-  }, 3500);
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(
+    () => element.classList.remove("visible", "show"),
+    3500
+  );
 }
 
-function escapeHTML(value = "") {
-  return String(value).replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[character]);
+function escapeHTML(text = "") {
+  return String(text).replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#039;"
+  })[char]);
 }
 
-function formatPrice(value) {
+function price(amount) {
   return new Intl.NumberFormat("en-KE", {
     style: "currency",
     currency: "KES",
     maximumFractionDigits: 2
-  }).format(Number(value) || 0);
+  }).format(Number(amount) || 0);
 }
 
-function normalizePhone(value = "") {
-  let phone = String(value).replace(/[^\d+]/g, "");
+function makeElement(tag, className = "", text = "") {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined && text !== null) element.textContent = text;
+  return element;
+}
+
+function makeButton(label, className, callback) {
+  const button = makeElement("button", className, label);
+  button.type = "button";
+  button.addEventListener("click", callback);
+  return button;
+}
+
+function normalizePhone(input = "") {
+  let phone = String(input).replace(/[^\d+]/g, "");
 
   if (phone.startsWith("+")) phone = phone.slice(1);
   if (phone.startsWith("00")) phone = phone.slice(2);
@@ -141,158 +158,123 @@ function normalizePhone(value = "") {
   return /^254\d{9}$/.test(phone) ? phone : "";
 }
 
-function departmentForCategory(category) {
-  return Object.entries(DEPARTMENTS).find(
-    ([, categories]) => categories.includes(category)
-  )?.[0] || "Other";
-}
-
-function createElement(tag, className, text) {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  if (text !== undefined) element.textContent = text;
-  return element;
-}
-
-function makeButton(label, className, callback) {
-  const button = createElement("button", className, label);
-  button.type = "button";
-  button.addEventListener("click", callback);
-  return button;
-}
-
-function getUserName(user = currentUser) {
+function userName() {
   return currentProfile?.name ||
-    user?.user_metadata?.name ||
-    user?.email?.split("@")[0] ||
+    currentUser?.user_metadata?.name ||
+    currentUser?.email?.split("@")[0] ||
     "Marketplace member";
 }
 
-function getUserRole() {
+function userRole() {
   return currentProfile?.role ||
     currentUser?.user_metadata?.role ||
     "customer";
 }
 
-/* =========================================================
-   AUTHENTICATION SLIDESHOW
-========================================================= */
-
-function setupAuthSlideshow() {
-  const panel = $(".auth-photo");
-  if (!panel) return;
-
-  clearInterval(slideshowTimer);
-
-  let index = 0;
-
-  const setImage = src => {
-    panel.style.backgroundImage = `
-      linear-gradient(0deg, rgba(16,27,45,.88), rgba(16,27,45,.08)),
-      url("${src}")
-    `;
-  };
-
-  setImage(AUTH_IMAGES[0]);
-
-  AUTH_IMAGES.forEach(src => {
-    const image = new Image();
-    image.src = src;
-  });
-
-  slideshowTimer = setInterval(() => {
-    index = (index + 1) % AUTH_IMAGES.length;
-    setImage(AUTH_IMAGES[index]);
-  }, 5000);
+function departmentFor(category) {
+  return Object.entries(DEPARTMENTS).find(
+    ([, categories]) => categories.includes(category)
+  )?.[0] || "Other";
 }
 
-/* =========================================================
-   AUTHENTICATION AND PROFILES
-========================================================= */
+function listingDepartment(item) {
+  const match = String(item.description || "").match(/^Department:\s*(.+)$/m);
+  return match?.[1]?.trim() || departmentFor(item.category);
+}
+
+/* -------------------- AUTHENTICATION -------------------- */
 
 function setAuthMode(mode) {
   authMode = mode;
   const signup = mode === "signup";
 
-  const fields = $("#signup-fields");
-  if (fields) fields.hidden = !signup;
-
-  const nameInput = $("#auth-name");
-  if (nameInput) nameInput.required = signup;
+  if ($("#signup-fields")) $("#signup-fields").hidden = !signup;
+  if ($("#auth-name")) $("#auth-name").required = signup;
 
   setText("auth-title", signup ? "Create your account" : "Welcome back");
   setText(
     "auth-description",
     signup
-      ? "Join ShambaMarket and connect with Kenya's agricultural community."
-      : "Sign in to discover agricultural products and services."
+      ? "Join Kenya's agricultural marketplace."
+      : "Sign in to explore ShambaMarket."
   );
   setText("auth-submit", signup ? "Create account" : "Sign in");
 
   $("#show-login")?.classList.toggle("active", !signup);
   $("#show-signup")?.classList.toggle("active", signup);
 
-  const password = $("#auth-password");
-  if (password) {
-    password.autocomplete = signup ? "new-password" : "current-password";
-  }
-
-  setStatus("auth-status", "");
+  status("auth-status", "");
 }
 
-async function getOrCreateProfile(user, fallback = {}) {
-  /*
-   * This expects a table named "profiles" with:
-   * id, name, email, role, phone.
-   * If your Supabase table is named "profile" instead,
-   * we must align this query with your actual schema.
-   */
-  const { data: existing, error: readError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (readError) throw readError;
-  if (existing) return existing;
-
+async function getProfile(user, fallback = {}) {
   const profile = {
     id: user.id,
-    name: fallback.name ||
-      user.user_metadata?.name ||
-      user.email?.split("@")[0] ||
-      "Member",
+    name: fallback.name || user.user_metadata?.name ||
+      user.email?.split("@")[0] || "Member",
     email: user.email || "",
-    role: fallback.role ||
-      user.user_metadata?.role ||
-      "customer",
-    phone: fallback.phone ||
-      user.user_metadata?.phone ||
-      ""
+    role: fallback.role || user.user_metadata?.role || "customer",
+    phone: fallback.phone || user.user_metadata?.phone || ""
   };
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert(profile)
-    .select()
-    .single();
+  // Try the common table name first, then the singular name.
+  for (const table of ["profiles", "profile"]) {
+    const result = await supabase
+      .from(table)
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
 
-  if (error) throw error;
-  return data;
+    if (result.error) {
+      if (
+        result.error.code === "42P01" ||
+        result.error.code === "PGRST205"
+      ) {
+        continue;
+      }
+
+      // Do not silently ignore permission or other database errors.
+      throw result.error;
+    }
+
+    profileTable = table;
+
+    if (result.data) return result.data;
+
+    const inserted = await supabase
+      .from(table)
+      .insert(profile)
+      .select()
+      .single();
+
+    if (!inserted.error) return inserted.data;
+
+    // A missing optional profile table should not prevent browsing.
+    if (
+      inserted.error.code === "42P01" ||
+      inserted.error.code === "PGRST205"
+    ) {
+      continue;
+    }
+
+    throw inserted.error;
+  }
+
+  // Auth metadata remains available if neither profile table exists.
+  return profile;
 }
 
-async function handleAuthSubmit(event) {
+async function handleAuth(event) {
   event.preventDefault();
 
-  const email = getValue("auth-email").toLowerCase();
+  const email = value("auth-email").toLowerCase();
   const password = $("#auth-password")?.value || "";
+  const button = $("#auth-submit");
 
   if (!email || !password) {
-    setStatus("auth-status", "Enter your email and password.", true);
+    status("auth-status", "Enter your email and password.", true);
     return;
   }
 
-  const button = $("#auth-submit");
   if (button) {
     button.disabled = true;
     button.textContent = "Please wait...";
@@ -300,31 +282,29 @@ async function handleAuthSubmit(event) {
 
   try {
     if (authMode === "signup") {
-      const name = getValue("auth-name");
-      const role = getValue("auth-role") || "customer";
+      const name = value("auth-name");
+      const role = value("auth-role") || "customer";
 
-      if (!name) throw new Error("Please enter your name.");
+      if (!name) throw new Error("Enter your name.");
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { name, role, phone: "" }
-        }
+        options: { data: { name, role, phone: "" } }
       });
 
       if (error) throw error;
 
       if (data.user && data.session) {
         currentUser = data.user;
-        currentProfile = await getOrCreateProfile(data.user, { name, role });
+        currentProfile = await getProfile(data.user, { name, role });
         await startApp();
-        showToast("Account created successfully.");
+        toast("Account created!");
       } else {
         setAuthMode("login");
-        setStatus(
+        status(
           "auth-status",
-          "Account created. Check your email to confirm your address, then sign in."
+          "Check your email to confirm your account, then sign in."
         );
       }
     } else {
@@ -336,13 +316,13 @@ async function handleAuthSubmit(event) {
       if (error) throw error;
 
       currentUser = data.user;
-      currentProfile = await getOrCreateProfile(data.user);
+      currentProfile = await getProfile(data.user);
       await startApp();
-      showToast("Welcome back!");
+      toast("Welcome back!");
     }
   } catch (error) {
     console.error("Authentication error:", error);
-    setStatus("auth-status", error.message || "Authentication failed.", true);
+    status("auth-status", error.message || "Sign-in failed.", true);
   } finally {
     if (button) {
       button.disabled = false;
@@ -351,27 +331,30 @@ async function handleAuthSubmit(event) {
   }
 }
 
-/* =========================================================
-   PAGE NAVIGATION
-========================================================= */
+function showAuth() {
+  stopMessaging();
+  if ($("#auth-page")) $("#auth-page").hidden = false;
+  if ($("#app-shell")) $("#app-shell").hidden = true;
+  setAuthMode("login");
+}
 
-function showPage(pageName) {
+/* -------------------- NAVIGATION -------------------- */
+
+function showPage(name) {
   $$(".app-page").forEach(page => {
-    const name = page.id.replace(/-page$/, "");
-    const visible = name === pageName;
-
+    const visible = page.id === `${name}-page`;
     page.hidden = !visible;
     page.classList.toggle("active", visible);
   });
 
   $$(".nav-link[data-page]").forEach(link => {
-    link.classList.toggle("active", link.dataset.page === pageName);
+    link.classList.toggle("active", link.dataset.page === name);
   });
 
-  if (pageName === "market") loadListings();
-  if (pageName === "farmer") loadFarmerListings();
-  if (pageName === "cart") renderCart();
-  if (pageName === "messages") loadConversations();
+  if (name === "market") loadListings();
+  if (name === "farmer") loadFarmerListings();
+  if (name === "cart") renderCart();
+  if (name === "messages") loadConversations();
 }
 
 function setupNavigation() {
@@ -379,84 +362,76 @@ function setupNavigation() {
     link.addEventListener("click", () => showPage(link.dataset.page));
   });
 
+  $("#sell-button")?.addEventListener("click", () => {
+    if (userRole() !== "farmer") {
+      toast("Sign in with a farmer account to publish listings.");
+      return;
+    }
+    showPage("farmer");
+  });
+
   $("#browse-button")?.addEventListener("click", () => {
     $("#marketplace")?.scrollIntoView({ behavior: "smooth" });
   });
 
-  $("#sell-button")?.addEventListener("click", () => showPage("farmer"));
-
-  $("#details-back-button")?.addEventListener("click", () => {
-    showPage("market");
-  });
-
-  $("#cart-continue-button")?.addEventListener("click", () => {
-    showPage("market");
-  });
-
+  $("#details-back-button")?.addEventListener("click", () => showPage("market"));
+  $("#cart-continue-button")?.addEventListener("click", () => showPage("market"));
   $("#cart-contact-button")?.addEventListener("click", contactCartSellers);
 }
 
-/* =========================================================
-   CATEGORY FILTERS AND DYNAMIC LISTING FIELDS
-========================================================= */
+/* -------------------- CATEGORIES -------------------- */
 
 function setupCategories() {
-  const filter = $("#category-list");
-  const select = $("#product-category");
+  const categoryList = $("#category-list");
+  const departmentSelect = $("#product-category");
 
-  if (filter) {
-    filter.replaceChildren();
+  if (categoryList) {
+    categoryList.replaceChildren();
 
-    ["All Categories", ...ALL_CATEGORIES].forEach(category => {
-      const button = makeButton(
-        category,
-        "category-chip",
-        () => {
-          selectedCategory = category;
-          selectedDepartment = "All";
-
-          $$(".category-chip", filter).forEach(chip => {
-            chip.classList.toggle("active", chip.textContent === category);
-          });
-
-          renderListings();
-        }
-      );
+    ["All Categories", ...CATEGORIES].forEach(category => {
+      const button = makeButton(category, "category-chip", () => {
+        selectedCategory = category;
+        selectedDepartment = "All";
+        $$(".category-chip", categoryList).forEach(chip => {
+          chip.classList.toggle("active", chip.textContent === category);
+        });
+        renderListings();
+      });
 
       if (category === selectedCategory) button.classList.add("active");
-      filter.appendChild(button);
+      categoryList.appendChild(button);
     });
   }
 
-  if (select) {
-    select.replaceChildren();
-    select.add(new Option("Choose a department", ""));
+  if (departmentSelect) {
+    departmentSelect.replaceChildren();
+    departmentSelect.add(new Option("Choose a department", ""));
 
     Object.keys(DEPARTMENTS).forEach(department => {
-      select.add(new Option(department, department));
+      departmentSelect.add(new Option(department, department));
     });
 
-    select.add(new Option("Existing produce categories", "Legacy Produce"));
-    select.addEventListener("change", updateSubcategories);
+    departmentSelect.addEventListener("change", updateSubcategories);
   }
 
   $("#market-category-grid")?.addEventListener("click", event => {
     const button = event.target.closest("[data-market-category]");
     if (!button) return;
 
-    const department = button.dataset.marketCategory;
-    selectedDepartment = DEPARTMENTS[department] ? department : "All";
+    const choice = button.dataset.marketCategory;
 
-    if (department === "All") {
-      selectedCategory = "All Categories";
-    } else if (ALL_CATEGORIES.includes(department)) {
-      selectedCategory = department;
+    if (choice === "All") {
       selectedDepartment = "All";
-    } else if (DEPARTMENTS[department]) {
       selectedCategory = "All Categories";
+    } else if (DEPARTMENTS[choice]) {
+      selectedDepartment = choice;
+      selectedCategory = "All Categories";
+    } else if (CATEGORIES.includes(choice)) {
+      selectedDepartment = "All";
+      selectedCategory = choice;
     } else {
-      selectedCategory = "All Categories";
       selectedDepartment = "All";
+      selectedCategory = "All Categories";
     }
 
     renderListings();
@@ -465,20 +440,18 @@ function setupCategories() {
 }
 
 function updateSubcategories() {
-  const department = getValue("product-category");
-  const subcategory = $("#product-subcategory");
-  if (!subcategory) return;
+  const department = value("product-category");
+  const select = $("#product-subcategory");
+  if (!select) return;
 
-  subcategory.replaceChildren();
-  subcategory.add(new Option("Choose a category", ""));
+  select.replaceChildren();
+  select.add(new Option("Choose a category", ""));
 
-  const choices = department === "Legacy Produce"
-    ? LEGACY_CATEGORIES
-    : (DEPARTMENTS[department] || []);
+  (DEPARTMENTS[department] || []).forEach(category => {
+    select.add(new Option(category, category));
+  });
 
-  choices.forEach(category => subcategory.add(new Option(category, category)));
-
-  subcategory.required = Boolean(department);
+  select.required = Boolean(department);
   renderDynamicFields(department);
   updateUnitOptions(department);
 }
@@ -489,14 +462,14 @@ function renderDynamicFields(department) {
 
   container.replaceChildren();
 
-  const fieldSets = {
+  const fields = {
     "Livestock & Poultry": [
       ["Breed", "extra-breed", "text", "e.g. Friesian"],
       ["Age", "extra-age", "text", "e.g. 18 months"],
-      ["Health details", "extra-health", "text", "Relevant health information"]
+      ["Health information", "extra-health", "text", "Relevant details"]
     ],
     "Agricultural Inputs & Fertilizers": [
-      ["Brand", "extra-brand", "text", "Brand name (optional)"],
+      ["Brand", "extra-brand", "text", "Brand name"],
       ["Package size", "extra-package", "text", "e.g. 25 kg bag"],
       ["Expiry date", "extra-expiry", "date", ""]
     ],
@@ -513,9 +486,9 @@ function renderDynamicFields(department) {
     ]
   };
 
-  (fieldSets[department] || []).forEach(([label, id, type, hint]) => {
-    const wrapper = createElement("div", "form-field");
-    const labelElement = createElement("label", "", label);
+  (fields[department] || []).forEach(([label, id, type, hint]) => {
+    const wrapper = makeElement("div", "form-field");
+    const labelElement = makeElement("label", "", label);
     labelElement.htmlFor = id;
 
     let input;
@@ -523,7 +496,7 @@ function renderDynamicFields(department) {
     if (type === "select") {
       input = document.createElement("select");
       input.add(new Option("Choose an option", ""));
-      hint.split(",").forEach(value => input.add(new Option(value, value)));
+      hint.split(",").forEach(option => input.add(new Option(option, option)));
     } else {
       input = document.createElement("input");
       input.type = type;
@@ -532,25 +505,22 @@ function renderDynamicFields(department) {
 
     input.id = id;
     input.dataset.extraField = "true";
-
     wrapper.append(labelElement, input);
     container.appendChild(wrapper);
   });
 }
 
 function updateUnitOptions(department) {
-  const unit = $("#product-unit");
-  if (!unit) return;
+  const select = $("#product-unit");
+  if (!select) return;
 
-  const optionsByDepartment = {
+  const options = {
     "Livestock & Poultry": ["animal", "bird", "piece"],
-    "Farm Services": ["service", "acre", "hour", "day", "item"],
+    "Farm Services": ["service", "acre", "hour", "day", "trip"],
     "Agricultural Inputs & Fertilizers": ["kg", "bag", "sack", "tonne", "packet", "litre", "item"],
     "Farm Tools & Equipment": ["item", "piece", "day", "hour"],
     "Animal & Farm Products": ["kg", "litre", "piece", "crate", "item"]
-  };
-
-  const options = optionsByDepartment[department] || [
+  }[department] || [
     "kg", "bag", "crate", "piece", "bunch", "litre", "sack", "tonne"
   ];
 
@@ -559,23 +529,33 @@ function updateUnitOptions(department) {
     piece: "Pieces", bunch: "Bunches", litre: "Litres",
     animal: "Animals", bird: "Birds", packet: "Packets",
     sack: "Sacks", tonne: "Tonnes", hour: "Hours",
-    day: "Days", acre: "Acres", service: "Services", item: "Items"
+    day: "Days", acre: "Acres", service: "Services",
+    item: "Items", trip: "Trips"
   };
 
-  const previous = unit.value;
-  unit.replaceChildren();
+  const previous = select.value;
+  select.replaceChildren();
 
-  options.forEach(value => unit.add(new Option(labels[value] || value, value)));
-
-  if (options.includes(previous)) unit.value = previous;
+  options.forEach(option => select.add(new Option(labels[option] || option, option)));
+  if (options.includes(previous)) select.value = previous;
 }
 
-/* =========================================================
-   MARKETPLACE LISTINGS
-========================================================= */
+function setupCountyFilter() {
+  const select = $("#county-filter");
+  if (!select) return;
+
+  const previous = select.value;
+  select.replaceChildren();
+  select.add(new Option("All counties", ""));
+
+  KENYAN_COUNTIES.forEach(county => select.add(new Option(county, county)));
+  select.value = previous;
+}
+
+/* -------------------- MARKETPLACE -------------------- */
 
 async function loadListings() {
-  setStatus("market-status", "Loading listings...");
+  status("market-status", "Loading marketplace...");
 
   const { data, error } = await supabase
     .from("listings")
@@ -583,111 +563,98 @@ async function loadListings() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Could not load listings:", error);
+    console.error("Listings error:", error);
     allListings = [];
     renderListings();
-    setStatus("market-status", "Could not load listings. Check Supabase permissions.", true);
+    status("market-status", "Could not load listings. Check table permissions.", true);
     return;
   }
 
   allListings = data || [];
   renderListings();
 
-  setStatus(
+  status(
     "market-status",
-    allListings.length
-      ? `${allListings.length} listing(s) available`
-      : "No products listed yet."
+    allListings.length ? `${allListings.length} listings available` : "No listings yet."
   );
 }
 
-function getFilteredListings() {
-  const search = getValue("search-input").toLowerCase();
-  const county = getValue("county-filter").toLowerCase();
-  const sort = getValue("sort-products");
+function filteredListings() {
+  const search = value("search-input").toLowerCase();
+  const county = value("county-filter").toLowerCase();
+  const sort = value("sort-products");
 
-  let results = [...allListings];
+  let items = [...allListings];
 
-  if (selectedDepartment !== "All" && DEPARTMENTS[selectedDepartment]) {
-    const categories = DEPARTMENTS[selectedDepartment];
-    results = results.filter(item => categories.includes(item.category));
+  if (selectedDepartment !== "All") {
+    items = items.filter(item => listingDepartment(item) === selectedDepartment);
   }
 
   if (selectedCategory !== "All Categories") {
-    results = results.filter(item => item.category === selectedCategory);
+    items = items.filter(item => item.category === selectedCategory);
   }
 
   if (search) {
-    results = results.filter(item => [
+    items = items.filter(item => [
       item.product_name, item.category, item.county, item.town,
       item.farmer_name, item.description
     ].join(" ").toLowerCase().includes(search));
   }
 
   if (county) {
-    results = results.filter(
-      item => (item.county || "").toLowerCase() === county
-    );
+    items = items.filter(item => (item.county || "").toLowerCase() === county);
   }
 
   if (sort === "price-low") {
-    results.sort((a, b) => Number(a.price) - Number(b.price));
+    items.sort((a, b) => Number(a.price) - Number(b.price));
   } else if (sort === "price-high") {
-    results.sort((a, b) => Number(b.price) - Number(a.price));
+    items.sort((a, b) => Number(b.price) - Number(a.price));
   } else {
-    results.sort((a, b) =>
-      new Date(b.created_at || 0) - new Date(a.created_at || 0)
-    );
+    items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   }
 
-  return results;
+  return items;
 }
 
 function renderListings() {
   const container = $("#product-list");
   if (!container) return;
 
-  const listings = getFilteredListings();
+  const items = filteredListings();
   container.replaceChildren();
+  setText("listing-summary", `${items.length} listing(s) found`);
 
-  setText("listing-summary", `${listings.length} listing(s) found`);
+  if ($("#empty-message")) $("#empty-message").hidden = items.length > 0;
 
-  const empty = $("#empty-message");
-  if (empty) empty.hidden = listings.length > 0;
-
-  listings.forEach(item => {
-    const card = createElement("article", "product-card");
+  items.forEach(item => {
+    const card = makeElement("article", "product-card");
 
     if (item.photo_url) {
-      const image = createElement("img", "product-photo");
+      const image = makeElement("img", "product-photo");
       image.src = item.photo_url;
       image.alt = item.product_name || "Product photo";
       image.loading = "lazy";
-      image.onerror = () => {
-        image.replaceWith(createElement("div", "product-photo product-photo-placeholder", "🌱"));
-      };
+      image.onerror = () => image.remove();
       card.appendChild(image);
     } else {
-      card.appendChild(createElement("div", "product-photo product-photo-placeholder", "🌱"));
+      card.appendChild(makeElement("div", "product-photo product-photo-placeholder", "🌱"));
     }
 
-    const body = createElement("div", "product-body");
-    body.appendChild(createElement("span", "product-category-label", item.category || "Other"));
-    body.appendChild(createElement("h3", "", item.product_name || "Untitled listing"));
-    body.appendChild(createElement("p", "product-price", `${formatPrice(item.price)} / ${item.unit || "item"}`));
-    body.appendChild(createElement("p", "product-meta", `Available: ${item.quantity ?? "Ask seller"} ${item.unit || ""}`));
-    body.appendChild(createElement("p", "product-meta", `📍 ${[item.town, item.county].filter(Boolean).join(", ") || "Location not provided"}`));
-    body.appendChild(createElement("p", "product-meta", `Seller: ${item.farmer_name || "Local seller"}`));
+    const body = makeElement("div", "product-body");
+    body.append(
+      makeElement("span", "product-category-label", item.category || "Other"),
+      makeElement("h3", "", item.product_name || "Untitled listing"),
+      makeElement("p", "product-price", `${price(item.price)} / ${item.unit || "item"}`),
+      makeElement("p", "product-meta", `Available: ${item.quantity ?? "Ask seller"} ${item.unit || ""}`),
+      makeElement("p", "product-meta", `📍 ${[item.town, item.county].filter(Boolean).join(", ") || "Location not provided"}`),
+      makeElement("p", "product-meta", `Seller: ${item.farmer_name || "Local seller"}`)
+    );
 
-    const actions = createElement("div", "product-actions");
-
-    actions.appendChild(makeButton("View details", "button button-primary", () => {
-      openProductDetails(item);
-    }));
-
-    actions.appendChild(makeButton("Message seller", "button button-outline", () => {
-      startConversationWithSeller(item);
-    }));
+    const actions = makeElement("div", "product-actions");
+    actions.append(
+      makeButton("View details", "button button-primary", () => openProductDetails(item)),
+      makeButton("Message seller", "button button-outline", () => startConversation(item))
+    );
 
     body.appendChild(actions);
     card.appendChild(body);
@@ -698,76 +665,75 @@ function renderListings() {
 function setupMarketFilters() {
   ["search-input", "county-filter", "sort-products"].forEach(id => {
     const element = $(`#${id}`);
-    if (!element) return;
-
-    element.addEventListener(
+    if (element) element.addEventListener(
       element.tagName === "SELECT" ? "change" : "input",
       renderListings
     );
   });
 }
 
-/* =========================================================
-   PRODUCT DETAILS AND CONTACT
-========================================================= */
+/* -------------------- PRODUCT DETAILS -------------------- */
 
 function openProductDetails(item) {
   selectedProduct = item;
-
   const container = $("#product-details-content");
   if (!container) return;
 
   container.replaceChildren();
-
-  const panel = createElement("article", "panel product-detail-panel");
+  const panel = makeElement("article", "panel product-detail-panel");
 
   if (item.photo_url) {
-    const image = createElement("img", "product-detail-image");
+    const image = makeElement("img", "product-detail-image");
     image.src = item.photo_url;
     image.alt = item.product_name || "Product photo";
     panel.appendChild(image);
   }
 
-  panel.appendChild(createElement("p", "eyebrow", item.category || "Marketplace listing"));
-  panel.appendChild(createElement("h2", "", item.product_name || "Untitled listing"));
-  panel.appendChild(createElement("h3", "product-price", `${formatPrice(item.price)} / ${item.unit || "item"}`));
+  panel.append(
+    makeElement("p", "eyebrow", listingDepartment(item)),
+    makeElement("h2", "", item.product_name || "Untitled listing"),
+    makeElement("h3", "product-price", `${price(item.price)} / ${item.unit || "item"}`)
+  );
 
-  const information = createElement("div", "product-detail-info");
+  const details = makeElement("div", "product-detail-info");
 
   [
-    ["Department", departmentForCategory(item.category)],
-    ["Category", item.category || "Not specified"],
-    ["Condition", item.condition || "Not specified"],
+    ["Department", listingDepartment(item)],
+    ["Category", item.category],
+    ["Condition", item.condition],
     ["Quantity", `${item.quantity ?? "Unknown"} ${item.unit || ""}`],
-    ["County", item.county || "Not provided"],
-    ["Town", item.town || "Not provided"],
-    ["Seller", item.farmer_name || "Marketplace seller"],
-    ["Description", item.description || "No additional description."]
-  ].forEach(([label, value]) => {
-    const line = createElement("p");
+    ["County", item.county],
+    ["Town", item.town],
+    ["Seller", item.farmer_name],
+    ["Description", String(item.description || "").replace(/^Department:\s*.+\n?/, "")]
+  ].forEach(([label, detail]) => {
+    const line = makeElement("p");
     line.append(
-      createElement("strong", "", `${label}: `),
-      document.createTextNode(value)
+      makeElement("strong", "", `${label}: `),
+      document.createTextNode(detail || "Not provided")
     );
-    information.appendChild(line);
+    details.appendChild(line);
   });
 
-  panel.appendChild(information);
+  panel.appendChild(details);
 
-  const actions = createElement("div", "product-actions");
-
-  actions.appendChild(makeButton("Add to cart", "button button-primary", () => addToCart(item)));
-  actions.appendChild(makeButton("Message seller", "button button-outline", () => startConversationWithSeller(item)));
+  const actions = makeElement("div", "product-actions");
+  actions.append(
+    makeButton("Add to cart", "button button-primary", () => addToCart(item)),
+    makeButton("Message seller", "button button-outline", () => startConversation(item))
+  );
 
   const phone = normalizePhone(item.phone);
 
   if (phone) {
-    const call = createElement("a", "button button-outline", "Call seller");
+    const call = makeElement("a", "button button-outline", "Call seller");
     call.href = `tel:+${phone}`;
     actions.appendChild(call);
 
-    const whatsapp = createElement("a", "button button-outline", "WhatsApp");
-    whatsapp.href = `https://wa.me/${phone}?text=${encodeURIComponent(`Hello, I am interested in ${item.product_name} on ShambaMarket.`)}`;
+    const whatsapp = makeElement("a", "button button-outline", "WhatsApp");
+    whatsapp.href = `https://wa.me/${phone}?text=${encodeURIComponent(
+      `Hello, I am interested in ${item.product_name} on ShambaMarket.`
+    )}`;
     whatsapp.target = "_blank";
     whatsapp.rel = "noopener noreferrer";
     actions.appendChild(whatsapp);
@@ -778,14 +744,12 @@ function openProductDetails(item) {
   showPage("details");
 }
 
-/* =========================================================
-   CART
-========================================================= */
+/* -------------------- CART -------------------- */
 
 function loadCart() {
   try {
-    const saved = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
-    cart = Array.isArray(saved) ? saved : [];
+    const stored = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+    cart = Array.isArray(stored) ? stored : [];
   } catch {
     cart = [];
   }
@@ -795,32 +759,24 @@ function saveCart() {
   try {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
   } catch {
-    showToast("Your browser could not save the cart.");
+    toast("Could not save the cart in this browser.");
   }
-
-  updateCartCount();
-}
-
-function updateCartCount() {
-  setText("cart-count", String(
-    cart.reduce((total, item) => total + item.cartQuantity, 0)
-  ));
+  setText("cart-count", cart.reduce((sum, item) => sum + item.cartQuantity, 0));
 }
 
 function addToCart(item) {
-  if (!item?.id) {
-    showToast("This listing has no valid ID.");
-    return;
+  if (!item?.id) return toast("This listing has no ID.");
+
+  if (currentUser && item.owner_id === currentUser.id) {
+    return toast("You cannot add your own listing to the cart.");
   }
 
   const existing = cart.find(row => String(row.id) === String(item.id));
+  const available = Math.max(1, Number(item.quantity) || 1);
 
   if (existing) {
-    if (existing.cartQuantity >= existing.quantity) {
-      showToast("You have added all of the listed quantity.");
-      return;
-    }
-    existing.cartQuantity += 1;
+    if (existing.cartQuantity >= available) return toast("Maximum listed quantity reached.");
+    existing.cartQuantity++;
   } else {
     cart.push({
       id: item.id,
@@ -828,7 +784,7 @@ function addToCart(item) {
       category: item.category,
       price: Number(item.price) || 0,
       unit: item.unit || "item",
-      quantity: Math.max(1, Number(item.quantity) || 1),
+      quantity: available,
       phone: item.phone || "",
       farmer_name: item.farmer_name || "",
       cartQuantity: 1
@@ -836,7 +792,7 @@ function addToCart(item) {
   }
 
   saveCart();
-  showToast("Added to cart.");
+  toast("Added to cart.");
 }
 
 function renderCart() {
@@ -846,97 +802,80 @@ function renderCart() {
   container.replaceChildren();
 
   if (!cart.length) {
-    container.appendChild(createElement(
-      "p", "muted",
-      "Your cart is empty. Browse the marketplace to add products."
-    ));
-    setText("cart-subtotal", formatPrice(0));
+    container.appendChild(makeElement("p", "muted", "Your cart is empty."));
+    setText("cart-subtotal", price(0));
+    status("cart-status", "");
     return;
   }
 
   cart.forEach(item => {
-    const row = createElement("article", "cart-item");
-    row.appendChild(createElement("h3", "", item.product_name));
-    row.appendChild(createElement("p", "", `${formatPrice(item.price)} / ${item.unit}`));
-    row.appendChild(createElement("p", "", `Quantity: ${item.cartQuantity}`));
-    row.appendChild(createElement("p", "", `Subtotal: ${formatPrice(item.price * item.cartQuantity)}`));
+    const row = makeElement("article", "cart-item");
+    row.append(
+      makeElement("h3", "", item.product_name),
+      makeElement("p", "", `${price(item.price)} / ${item.unit}`),
+      makeElement("p", "", `Quantity: ${item.cartQuantity}`),
+      makeElement("p", "", `Subtotal: ${price(item.price * item.cartQuantity)}`)
+    );
 
-    const actions = createElement("div", "cart-item-actions");
-
-    actions.appendChild(makeButton("−", "button button-outline", () => changeCartQuantity(item.id, -1)));
-    actions.appendChild(makeButton("+", "button button-outline", () => changeCartQuantity(item.id, 1)));
-    actions.appendChild(makeButton("Remove", "button button-outline", () => removeCartItem(item.id)));
+    const actions = makeElement("div", "cart-item-actions");
+    actions.append(
+      makeButton("−", "button button-outline", () => changeCart(item.id, -1)),
+      makeButton("+", "button button-outline", () => changeCart(item.id, 1)),
+      makeButton("Remove", "button button-outline", () => removeCart(item.id))
+    );
 
     row.appendChild(actions);
     container.appendChild(row);
   });
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0);
-  setText("cart-subtotal", formatPrice(total));
+  setText("cart-subtotal", price(
+    cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0)
+  ));
 }
 
-function changeCartQuantity(id, amount) {
+function changeCart(id, amount) {
   const item = cart.find(row => String(row.id) === String(id));
   if (!item) return;
 
   const next = item.cartQuantity + amount;
-
-  if (next <= 0) {
-    removeCartItem(id);
-    return;
-  }
-
-  if (next > item.quantity) {
-    showToast("That exceeds the quantity listed by the seller.");
-    return;
-  }
+  if (next <= 0) return removeCart(id);
+  if (next > item.quantity) return toast("That exceeds the listed quantity.");
 
   item.cartQuantity = next;
   saveCart();
   renderCart();
 }
 
-function removeCartItem(id) {
+function removeCart(id) {
   cart = cart.filter(item => String(item.id) !== String(id));
   saveCart();
   renderCart();
-  showToast("Item removed from cart.");
 }
 
 function contactCartSellers() {
-  if (!cart.length) {
-    showToast("Your cart is empty.");
-    return;
-  }
+  if (!cart.length) return toast("Your cart is empty.");
 
-  const first = cart.find(item => normalizePhone(item.phone));
+  const phone = normalizePhone(cart.find(item => normalizePhone(item.phone))?.phone);
+  if (!phone) return status("cart-status", "No valid seller phone number was found.", true);
 
-  if (!first) {
-    setStatus("cart-status", "No seller in your cart has a valid contact number.");
-    return;
-  }
-
-  const phone = normalizePhone(first.phone);
-  const message = cart
+  const items = cart
     .filter(item => normalizePhone(item.phone) === phone)
     .map(item => `${item.product_name} x ${item.cartQuantity}`)
     .join(", ");
 
-  setStatus(
+  status(
     "cart-status",
-    "Confirm stock, delivery, total price and payment directly with the seller. No payment has been taken."
+    "Confirm stock, delivery, final price and payment directly with the seller. No payment has been taken."
   );
 
   window.open(
-    `https://wa.me/${phone}?text=${encodeURIComponent("Hello, I am enquiring about: " + message)}`,
+    `https://wa.me/${phone}?text=${encodeURIComponent("Hello, I am enquiring about: " + items)}`,
     "_blank",
     "noopener,noreferrer"
   );
 }
 
-/* =========================================================
-   PHOTO UPLOAD AND PREVIEW
-========================================================= */
+/* -------------------- PRODUCT PHOTOS -------------------- */
 
 function setupPhotoPreview() {
   const input = $("#product-photo");
@@ -945,43 +884,32 @@ function setupPhotoPreview() {
   input.addEventListener("change", () => {
     const file = input.files?.[0];
     const preview = $("#photo-preview");
-
-    if (!file) {
-      if (preview) {
-        preview.replaceChildren();
-        preview.hidden = true;
-      }
-      return;
-    }
+    if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      showToast("Choose a JPG, PNG or WebP image.");
       input.value = "";
-      return;
+      return toast("Choose a JPG, PNG or WebP image.");
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      showToast("Choose an image smaller than 5 MB.");
       input.value = "";
-      return;
+      return toast("Choose an image smaller than 5 MB.");
     }
 
     if (preview) {
       preview.replaceChildren();
-
-      const image = createElement("img");
+      const image = makeElement("img");
       image.src = URL.createObjectURL(file);
       image.alt = "Listing photo preview";
       image.style.maxWidth = "100%";
       image.style.maxHeight = "220px";
-
       preview.appendChild(image);
       preview.hidden = false;
     }
   });
 }
 
-async function uploadProductPhoto(file) {
+async function uploadPhoto(file) {
   if (!file) return "";
 
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -998,38 +926,32 @@ async function uploadProductPhoto(file) {
 
   if (error) throw error;
 
-  return supabase.storage
-    .from("product-photos")
-    .getPublicUrl(path).data.publicUrl;
+  return supabase.storage.from("product-photos").getPublicUrl(path).data.publicUrl;
 }
 
-/* =========================================================
-   PUBLISH LISTING
-========================================================= */
+/* -------------------- PUBLISH LISTING -------------------- */
 
 async function handleProductSubmit(event) {
   event.preventDefault();
 
-  if (!currentUser) {
-    showToast("Please sign in before publishing.");
-    return;
+  if (!currentUser) return toast("Sign in first.");
+  if (userRole() !== "farmer") {
+    return status("farmer-status", "Only farmer accounts can publish listings.", true);
   }
 
-  const department = getValue("product-category");
-  const category = getValue("product-subcategory");
-  const name = getValue("product-name");
-  const price = Number(getValue("product-price"));
-  const quantity = Number(getValue("product-quantity"));
+  const department = value("product-category");
+  const category = value("product-subcategory");
+  const name = value("product-name");
+  const priceValue = Number(value("product-price"));
+  const quantity = Number(value("product-quantity"));
 
   if (!department || !category || !name) {
-    setStatus("farmer-status", "Choose a department, category and product name.", true);
-    return;
+    return status("farmer-status", "Choose a department, category and product name.", true);
   }
 
-  if (!Number.isFinite(price) || price < 0 ||
+  if (!Number.isFinite(priceValue) || priceValue < 0 ||
       !Number.isFinite(quantity) || quantity <= 0) {
-    setStatus("farmer-status", "Enter a valid price and quantity.", true);
-    return;
+    return status("farmer-status", "Enter a valid price and quantity.", true);
   }
 
   const button = $("#publish-button");
@@ -1039,65 +961,59 @@ async function handleProductSubmit(event) {
   }
 
   try {
-    const file = $("#product-photo")?.files?.[0];
-    const photoUrl = await uploadProductPhoto(file);
+    const photo = await uploadPhoto($("#product-photo")?.files?.[0]);
 
-    const extraDetails = $$("[data-extra-field]")
-      .map(input => {
-        const label = input.closest(".form-field")?.querySelector("label")?.textContent;
-        return input.value ? `${label || input.id}: ${input.value}` : "";
-      })
-      .filter(Boolean)
-      .join("\n");
+    const extra = $$("[data-extra-field]").map(input => {
+      const label = input.closest(".form-field")?.querySelector("label")?.textContent;
+      return input.value ? `${label || input.id}: ${input.value}` : "";
+    }).filter(Boolean).join("\n");
 
     const description = [
-      getValue("product-description"),
-      extraDetails
+      `Department: ${department}`,
+      value("product-description"),
+      extra
     ].filter(Boolean).join("\n\n");
 
-    /*
-     * Only columns already used by the existing application are inserted.
-     * The selected department is included in the description so no new
-     * database column is required for this initial rebuild.
-     */
     const listing = {
       owner_id: currentUser.id,
       product_name: name,
       category,
-      price,
+      price: priceValue,
       quantity,
-      unit: getValue("product-unit") || "item",
-      condition: getValue("product-condition") || "Good",
-      county: getValue("product-county"),
-      town: getValue("product-town"),
-      farmer_name: getUserName(),
+      unit: value("product-unit") || "item",
+      condition: value("product-condition") || "Good",
+      county: value("product-county"),
+      town: value("product-town"),
+      farmer_name: userName(),
       phone: currentProfile?.phone || currentUser.user_metadata?.phone || "",
-      photo_url: photoUrl,
-      description: `Department: ${department}\n${description}`.trim()
+      photo_url: photo,
+      description
     };
 
     const { error } = await supabase.from("listings").insert(listing);
     if (error) throw error;
 
     $("#product-form")?.reset();
-
-    const preview = $("#photo-preview");
-    if (preview) {
-      preview.replaceChildren();
-      preview.hidden = true;
+    if ($("#photo-preview")) {
+      $("#photo-preview").replaceChildren();
+      $("#photo-preview").hidden = true;
     }
 
     $("#dynamic-product-fields")?.replaceChildren();
     updateSubcategories();
 
-    setStatus("farmer-status", "Listing published successfully.");
-    showToast("Your listing is now live.");
+    status("farmer-status", "Listing published successfully.");
+    toast("Your listing is live.");
 
     await loadListings();
     await loadFarmerListings();
   } catch (error) {
-    console.error("Publishing error:", error);
-    setStatus("farmer-status", error.message || "Could not publish listing.", true);
+    console.error("Publish error:", error);
+    status(
+      "farmer-status",
+      `Could not publish listing: ${error.message || "Unknown error"}`,
+      true
+    );
   } finally {
     if (button) {
       button.disabled = false;
@@ -1106,9 +1022,7 @@ async function handleProductSubmit(event) {
   }
 }
 
-/* =========================================================
-   FARMER'S LISTINGS
-========================================================= */
+/* -------------------- FARMER LISTINGS -------------------- */
 
 async function loadFarmerListings() {
   const container = $("#farmer-listings");
@@ -1123,23 +1037,24 @@ async function loadFarmerListings() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Farmer listings error:", error);
-    setStatus("farmer-status", "Could not load your listings.", true);
-    return;
+    console.error(error);
+    return status("farmer-status", "Could not load your listings.", true);
   }
 
   if (!data?.length) {
-    container.appendChild(createElement("p", "muted", "You have not published any listings yet."));
+    container.appendChild(makeElement("p", "muted", "You have not published listings yet."));
     return;
   }
 
   data.forEach(item => {
-    const row = createElement("article", "farmer-listing");
-    const details = createElement("div");
+    const row = makeElement("article", "farmer-listing");
+    const details = makeElement("div");
 
-    details.appendChild(createElement("strong", "", item.product_name));
-    details.appendChild(createElement("p", "", `${item.category} · ${formatPrice(item.price)}`));
-    details.appendChild(createElement("small", "", item.county || "Location not set"));
+    details.append(
+      makeElement("strong", "", item.product_name),
+      makeElement("p", "", `${item.category} · ${price(item.price)}`),
+      makeElement("small", "", item.county || "Location not set")
+    );
 
     const remove = makeButton("Delete", "button button-outline", async () => {
       if (!window.confirm(`Delete "${item.product_name}"?`)) return;
@@ -1152,11 +1067,10 @@ async function loadFarmerListings() {
 
       if (deleteError) {
         console.error(deleteError);
-        showToast("Could not delete the listing.");
-        return;
+        return toast("Could not delete listing.");
       }
 
-      showToast("Listing deleted.");
+      toast("Listing deleted.");
       await loadListings();
       await loadFarmerListings();
     });
@@ -1166,27 +1080,9 @@ async function loadFarmerListings() {
   });
 }
 
-/* =========================================================
-   DIRECT MESSAGING — SUPABASE
-========================================================= */
+/* -------------------- DIRECT MESSAGING -------------------- */
 
-/*
- * This messaging code expects these tables:
- *
- * conversations:
- *   id, created_at, updated_at
- *
- * conversation_participants:
- *   conversation_id, user_id
- *
- * messages:
- *   id, conversation_id, sender_id, body, created_at
- *
- * Configure the tables, foreign keys, Realtime publication and
- * participant-only RLS policies before using direct messaging.
- */
-
-function stopMessageSubscription() {
+function stopMessaging() {
   if (messageChannel) {
     supabase.removeChannel(messageChannel);
     messageChannel = null;
@@ -1202,124 +1098,90 @@ async function loadConversations() {
   const container = $("#conversation-list");
   if (!container || !currentUser) return;
 
-  stopMessageSubscription();
+  stopMessaging();
   container.replaceChildren();
 
-  setStatus("messages-status", "Loading your conversations...");
-
-  const { data: memberships, error: membershipError } = await supabase
+  const { data: memberships, error } = await supabase
     .from("conversation_participants")
     .select("conversation_id")
     .eq("user_id", currentUser.id);
 
-  if (membershipError) {
-    console.error("Conversation list error:", membershipError);
-    setStatus(
-      "messages-status",
-      "Messaging setup is incomplete. Create the messaging tables and security policies in Supabase first.",
-      true
-    );
-    return;
+  if (error) {
+    console.error(error);
+    return status("messages-status", "Could not load conversations. Check Supabase permissions.", true);
   }
 
   const ids = [...new Set((memberships || []).map(row => row.conversation_id))];
 
   if (!ids.length) {
-    container.appendChild(createElement(
+    container.appendChild(makeElement(
       "p", "muted",
-      "No conversations yet. Open a marketplace listing and choose Message seller."
+      "No conversations yet. Open a listing and choose Message seller."
     ));
-    setStatus("messages-status", "");
+    status("messages-status", "");
     return;
   }
 
-  const { data: conversations, error } = await supabase
-    .from("conversations")
-    .select("*")
-    .in("id", ids)
-    .order("updated_at", { ascending: false });
+  const [conversationResult, participantResult] = await Promise.all([
+    supabase.from("conversations").select("*").in("id", ids).order("updated_at", { ascending: false }),
+    supabase.from("conversation_participants").select("conversation_id,user_id").in("conversation_id", ids)
+  ]);
 
-  if (error) {
-    console.error("Conversation query error:", error);
-    setStatus("messages-status", "Could not load conversations.", true);
-    return;
+  if (conversationResult.error || participantResult.error) {
+    console.error(conversationResult.error || participantResult.error);
+    return status("messages-status", "Could not load conversation details.", true);
   }
 
-  const { data: participants, error: participantError } = await supabase
-    .from("conversation_participants")
-    .select("conversation_id,user_id")
-    .in("conversation_id", ids);
-
-  if (participantError) {
-    setStatus("messages-status", "Could not load conversation participants.", true);
-    return;
-  }
-
-  const otherIds = [...new Set(
-    (participants || [])
-      .filter(row => row.user_id !== currentUser.id)
-      .map(row => row.user_id)
-  )];
+  const conversations = conversationResult.data || [];
+  const participants = participantResult.data || [];
+  const otherIds = [...new Set(participants
+    .filter(row => row.user_id !== currentUser.id)
+    .map(row => row.user_id))];
 
   let profiles = [];
 
   if (otherIds.length) {
     const result = await supabase
-      .from("profiles")
+      .from(profileTable)
       .select("id,name")
       .in("id", otherIds);
 
-    if (result.error) {
-      console.error("Profile lookup error:", result.error);
-    } else {
-      profiles = result.data || [];
-    }
+    if (!result.error) profiles = result.data || [];
   }
 
-  conversations?.forEach(conversation => {
-    const others = (participants || []).filter(
-      row => row.conversation_id === conversation.id &&
-        row.user_id !== currentUser.id
+  conversations.forEach(conversation => {
+    const others = participants.filter(row =>
+      row.conversation_id === conversation.id && row.user_id !== currentUser.id
     );
 
     const names = others.map(person =>
-      profiles.find(profile => profile.id === person.user_id)?.name ||
-      "Marketplace member"
+      profiles.find(profile => profile.id === person.user_id)?.name || "Marketplace member"
     );
 
-    const button = makeButton(
+    container.appendChild(makeButton(
       names.join(", ") || "Conversation",
       "conversation-item",
-      () => openConversation(conversation.id, names.join(", "))
-    );
-
-    button.setAttribute("aria-label", `Open conversation with ${names.join(", ") || "marketplace member"}`);
-    container.appendChild(button);
+      () => openConversation(conversation.id, names.join(", ") || "Conversation")
+    ));
   });
 
-  setStatus("messages-status", "");
+  status("messages-status", "");
 }
 
-async function startConversationWithSeller(listing) {
+async function startConversation(listing) {
   if (!currentUser) {
-    showToast("Sign in to message a seller.");
-    showAuthScreen();
+    toast("Sign in to message a seller.");
+    showAuth();
     return;
   }
 
-  if (!listing?.owner_id) {
-    showToast("This listing has no seller account linked.");
-    return;
-  }
+  if (!listing?.owner_id) return toast("This listing has no linked seller account.");
+  if (listing.owner_id === currentUser.id) return toast("This is your own listing.");
 
-  if (listing.owner_id === currentUser.id) {
-    showToast("This is your own listing.");
-    return;
-  }
-
-  setStatus("messages-status", "Opening conversation...");
+  status("messages-status", "Opening conversation...");
 
   try {
+    // Reuse an existing conversation only if it has exactly these two members.
     const { data: mine, error: mineError } = await supabase
       .from("conversation_participants")
       .select("conversation_id")
@@ -1327,157 +1189,132 @@ async function startConversationWithSeller(listing) {
 
     if (mineError) throw mineError;
 
-    const myConversationIds = (mine || []).map(row => row.conversation_id);
+    const myIds = [...new Set((mine || []).map(row => row.conversation_id))];
 
-    if (myConversationIds.length) {
-      const { data: theirs, error: theirsError } = await supabase
+    if (myIds.length) {
+      const { data: shared, error: sharedError } = await supabase
         .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", listing.owner_id)
-        .in("conversation_id", myConversationIds);
+        .select("conversation_id,user_id")
+        .in("conversation_id", myIds);
 
-      if (theirsError) throw theirsError;
+      if (sharedError) throw sharedError;
 
-      if (theirs?.length) {
-        await openConversation(theirs[0].conversation_id, listing.farmer_name || "Seller");
+      const grouped = new Map();
+
+      (shared || []).forEach(row => {
+        if (!grouped.has(row.conversation_id)) grouped.set(row.conversation_id, []);
+        grouped.get(row.conversation_id).push(row.user_id);
+      });
+
+      const existingId = [...grouped.entries()].find(([, members]) =>
+        members.length === 2 &&
+        members.includes(currentUser.id) &&
+        members.includes(listing.owner_id)
+      )?.[0];
+
+      if (existingId) {
+        await openConversation(existingId, listing.farmer_name || "Seller");
         return;
       }
     }
 
-    const { data: conversation, error: createError } = await supabase
-      .from("conversations")
-      .insert({})
-      .select()
-      .single();
+    // This RPC securely adds both participants on the database side.
+    const { data: conversationId, error: createError } = await supabase
+      .rpc("create_conversation", { p_other_user: listing.owner_id });
 
     if (createError) throw createError;
-
-    const { error: participantInsertError } = await supabase
-      .from("conversation_participants")
-      .insert([
-        { conversation_id: conversation.id, user_id: currentUser.id },
-        { conversation_id: conversation.id, user_id: listing.owner_id }
-      ]);
-
-    if (participantInsertError) throw participantInsertError;
-
-    const firstMessage = `Hello! I am interested in your listing: ${listing.product_name}.`;
 
     const { error: messageError } = await supabase
       .from("messages")
       .insert({
-        conversation_id: conversation.id,
+        conversation_id: conversationId,
         sender_id: currentUser.id,
-        body: firstMessage
+        body: `Hello! I am interested in your listing: ${listing.product_name}.`
       });
 
     if (messageError) throw messageError;
 
-    await openConversation(conversation.id, listing.farmer_name || "Seller");
+    await openConversation(conversationId, listing.farmer_name || "Seller");
   } catch (error) {
     console.error("Start conversation error:", error);
-    setStatus(
+    status(
       "messages-status",
-      "Could not start a conversation. Check that the messaging tables and policies are installed.",
+      `Could not start conversation: ${error.message || "Check your Supabase setup."}`,
       true
     );
     showPage("messages");
   }
 }
 
-async function openConversation(conversationId, title = "Conversation") {
+async function openConversation(id, title = "Conversation") {
   if (!currentUser) return;
 
-  activeConversation = conversationId;
+  activeConversation = id;
   showPage("messages");
-
   setText("conversation-header", title);
-  setStatus("messages-status", "Loading messages...");
 
   const form = $("#message-form");
-  if (form) form.dataset.conversationId = conversationId;
+  if (form) form.dataset.conversationId = id;
 
-  await loadMessages(conversationId);
-
-  stopMessageSubscription();
+  await loadMessages(id);
+  stopMessaging();
 
   messageChannel = supabase
-    .channel(`chat-${conversationId}-${currentUser.id}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `conversation_id=eq.${conversationId}`
-      },
-      payload => {
-        const message = payload.new;
-        if (message.sender_id !== currentUser.id) {
-          renderSingleMessage(message);
-        }
-      }
-    )
+    .channel(`shamba-chat-${id}`)
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "messages",
+      filter: `conversation_id=eq.${id}`
+    }, () => {
+      if (activeConversation === id) loadMessages(id);
+    })
     .subscribe();
 
-  // Fallback refresh if Realtime has not been enabled yet.
+  // Backup refresh if Realtime cannot connect.
   messageRefreshTimer = setInterval(() => {
-    if (activeConversation === conversationId) {
-      loadMessages(conversationId);
-    }
-  }, 10000);
+    if (activeConversation === id) loadMessages(id);
+  }, 15000);
 }
 
-async function loadMessages(conversationId) {
+async function loadMessages(id) {
   const container = $("#message-list");
   if (!container || !currentUser) return;
 
   const { data, error } = await supabase
     .from("messages")
     .select("id,conversation_id,sender_id,body,created_at")
-    .eq("conversation_id", conversationId)
+    .eq("conversation_id", id)
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("Load messages error:", error);
-    setStatus("messages-status", "Could not load messages.", true);
-    return;
+    console.error(error);
+    return status("messages-status", "Could not load messages.", true);
   }
 
   container.replaceChildren();
-  (data || []).forEach(renderSingleMessage);
-  setStatus("messages-status", "");
+  (data || []).forEach(message => {
+    const mine = message.sender_id === currentUser.id;
+    const bubble = makeElement(
+      "article",
+      `message-bubble ${mine ? "message-mine" : "message-theirs"}`
+    );
 
-  container.scrollTop = container.scrollHeight;
-}
+    bubble.dataset.messageId = message.id;
+    bubble.appendChild(makeElement("p", "message-text", message.body || ""));
 
-function renderSingleMessage(message) {
-  const container = $("#message-list");
-  if (!container || !message) return;
+    bubble.appendChild(makeElement(
+      "small",
+      "message-time",
+      message.created_at
+        ? new Date(message.created_at).toLocaleString("en-KE")
+        : ""
+    ));
 
-  if (message.id && $(`[data-message-id="${CSS.escape(String(message.id))}"]`, container)) {
-    return;
-  }
+    container.appendChild(bubble);
+  });
 
-  const mine = message.sender_id === currentUser?.id;
-  const bubble = createElement(
-    "article",
-    `message-bubble ${mine ? "message-mine" : "message-theirs"}`
-  );
-
-  if (message.id) bubble.dataset.messageId = message.id;
-
-  bubble.appendChild(createElement("p", "message-text", message.body || ""));
-
-  const date = message.created_at
-    ? new Date(message.created_at).toLocaleString("en-KE", {
-        dateStyle: "short",
-        timeStyle: "short"
-      })
-    : "";
-
-  bubble.appendChild(createElement("small", "message-time", date));
-  container.appendChild(bubble);
+  status("messages-status", "");
   container.scrollTop = container.scrollHeight;
 }
 
@@ -1485,8 +1322,7 @@ async function handleMessageSubmit(event) {
   event.preventDefault();
 
   if (!currentUser || !activeConversation) {
-    setStatus("messages-status", "Open a conversation before sending a message.", true);
-    return;
+    return status("messages-status", "Open a conversation first.", true);
   }
 
   const input = $("#message-input");
@@ -1494,58 +1330,52 @@ async function handleMessageSubmit(event) {
 
   if (!body) return;
   if (body.length > 4000) {
-    setStatus("messages-status", "Messages must be 4,000 characters or fewer.", true);
-    return;
+    return status("messages-status", "Messages must be 4,000 characters or fewer.", true);
   }
 
   const button = $("#send-message-button");
   if (button) button.disabled = true;
 
   try {
-    const { error } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: activeConversation,
-        sender_id: currentUser.id,
-        body
-      });
+    const { error } = await supabase.from("messages").insert({
+      conversation_id: activeConversation,
+      sender_id: currentUser.id,
+      body
+    });
 
     if (error) throw error;
 
-    if (input) input.value = "";
+    input.value = "";
     await loadMessages(activeConversation);
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("conversations")
       .update({ updated_at: new Date().toISOString() })
       .eq("id", activeConversation);
+
+    if (updateError) console.warn("Could not update conversation timestamp:", updateError);
   } catch (error) {
-    console.error("Send message error:", error);
-    setStatus("messages-status", "Message could not be sent. Check your connection and permissions.", true);
+    console.error(error);
+    status("messages-status", `Message failed: ${error.message || "Check permissions."}`, true);
   } finally {
     if (button) button.disabled = false;
   }
 }
 
-/* =========================================================
-   ACCOUNT, THEME AND SIGN-OUT
-========================================================= */
+/* -------------------- ACCOUNT & THEME -------------------- */
 
-function updateAccountDetails() {
-  const name = getUserName();
-  setText("account-label", name);
-  setText("farmer-name", name);
+function updateAccount() {
+  setText("account-label", userName());
+  setText("farmer-name", userName());
 
-  const role = getUserRole();
+  const farmer = userRole() === "farmer";
 
   $$('.nav-link[data-page="farmer"]').forEach(link => {
-    link.hidden = role !== "farmer";
+    link.hidden = !farmer;
   });
 
   $$('[data-page="farmer"]').forEach(element => {
-    if (!element.classList.contains("nav-link")) {
-      element.hidden = role !== "farmer";
-    }
+    if (!element.classList.contains("nav-link")) element.hidden = !farmer;
   });
 }
 
@@ -1553,66 +1383,53 @@ function setupTheme() {
   const toggle = $("#theme-toggle");
   if (!toggle) return;
 
+  const saved = localStorage.getItem("shamba-theme");
+  if (saved === "dark") document.body.classList.add("dark-theme");
+
+  const refresh = () => {
+    const dark = document.body.classList.contains("dark-theme");
+    toggle.setAttribute("aria-pressed", String(dark));
+    toggle.textContent = dark ? "Light Mode" : "Dark Mode";
+  };
+
+  refresh();
+
   toggle.addEventListener("click", () => {
     document.body.classList.toggle("dark-theme");
-
-    const enabled = document.body.classList.contains("dark-theme");
-    toggle.setAttribute("aria-pressed", String(enabled));
-    toggle.textContent = enabled ? "Light Mode" : "Dark Mode";
+    localStorage.setItem(
+      "shamba-theme",
+      document.body.classList.contains("dark-theme") ? "dark" : "light"
+    );
+    refresh();
   });
 }
 
-function showAuthScreen() {
-  stopMessageSubscription();
-
-  const authPage = $("#auth-page");
-  const appShell = $("#app-shell");
-
-  if (authPage) authPage.hidden = false;
-  if (appShell) appShell.hidden = true;
-
-  setAuthMode("login");
-  setupAuthSlideshow();
-}
-
 async function signOut() {
-  stopMessageSubscription();
+  stopMessaging();
 
   const { error } = await supabase.auth.signOut();
-
-  if (error) {
-    console.error("Sign-out error:", error);
-    showToast("Could not sign out.");
-    return;
-  }
+  if (error) return toast("Could not sign out.");
 
   currentUser = null;
   currentProfile = null;
   activeConversation = null;
   allListings = [];
-
-  showAuthScreen();
+  showAuth();
 }
 
-/* =========================================================
-   START APPLICATION
-========================================================= */
+/* -------------------- STARTUP -------------------- */
 
 async function startApp() {
-  const authPage = $("#auth-page");
-  const appShell = $("#app-shell");
+  if ($("#auth-page")) $("#auth-page").hidden = true;
+  if ($("#app-shell")) $("#app-shell").hidden = false;
 
-  if (authPage) authPage.hidden = true;
-  if (appShell) appShell.hidden = false;
-
-  updateAccountDetails();
+  updateAccount();
   await loadListings();
-
-  showPage(getUserRole() === "farmer" ? "farmer" : "market");
+  showPage(userRole() === "farmer" ? "farmer" : "market");
 }
 
-function setupEventListeners() {
-  $("#auth-form")?.addEventListener("submit", handleAuthSubmit);
+function setupEvents() {
+  $("#auth-form")?.addEventListener("submit", handleAuth);
 
   $("#show-login")?.addEventListener("click", event => {
     event.preventDefault();
@@ -1626,7 +1443,6 @@ function setupEventListeners() {
 
   $("#logout-button")?.addEventListener("click", signOut);
   $("#settings-logout")?.addEventListener("click", signOut);
-
   $("#product-form")?.addEventListener("submit", handleProductSubmit);
   $("#message-form")?.addEventListener("submit", handleMessageSubmit);
 
@@ -1634,16 +1450,16 @@ function setupEventListeners() {
   setupMarketFilters();
   setupPhotoPreview();
   setupTheme();
+  setupCountyFilter();
 }
 
 async function init() {
   setText("current-year", new Date().getFullYear());
 
   setupCategories();
-  setupEventListeners();
-  setupAuthSlideshow();
+  setupEvents();
   loadCart();
-  updateCartCount();
+  setText("cart-count", cart.reduce((sum, item) => sum + item.cartQuantity, 0));
 
   try {
     const { data, error } = await supabase.auth.getSession();
@@ -1652,10 +1468,10 @@ async function init() {
     currentUser = data.session?.user || null;
 
     if (currentUser) {
-      currentProfile = await getOrCreateProfile(currentUser);
+      currentProfile = await getProfile(currentUser);
       await startApp();
     } else {
-      showAuthScreen();
+      showAuth();
     }
 
     supabase.auth.onAuthStateChange((event, session) => {
@@ -1663,15 +1479,15 @@ async function init() {
         currentUser = null;
         currentProfile = null;
         activeConversation = null;
-        showAuthScreen();
+        showAuth();
       }
     });
   } catch (error) {
     console.error("Startup error:", error);
-    showAuthScreen();
-    setStatus(
+    showAuth();
+    status(
       "auth-status",
-      "Could not connect. Check your Supabase configuration, profile table and access policies.",
+      `Connection problem: ${error.message || "Check Supabase settings."}`,
       true
     );
   }
