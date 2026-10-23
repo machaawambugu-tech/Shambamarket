@@ -62,3 +62,20 @@
 .dark-theme .hero h1 span { color: #b4c58a; }
 .dark-theme .hero-copy>p:not(.eyebrow) { color: #d0d8c6; }
 .dark-theme .auth-panel { color: #20291b; }
+/* SHAMBAMARKET login/signup slideshow */
+.auth-photo {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background-image:
+    linear-gradient(0deg, rgba(28,42,20,.83), rgba(42,58,29,.08) 85%),
+    url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1500&q=85");
+  background-size: cover;
+  background-position: center;
+  transition: background-image .6s ease-in-out;
+}
+
+.auth-photo-copy {
+  position: relative;
+  z-index: 1;
+}
