@@ -1,70 +1,51 @@
 
 import { supabase } from "./supabase-config.js";
 
-/* =========================================================
-   SHAMBAMARKET — REBUILT APPLICATION
-   Marketplace • Categories • Farmer listings • Cart
-   Supabase Auth • Direct messages • Realtime • Dark mode
-========================================================= */
+/*
+ * SHAMBAMARKET — APP CONTROLLER
+ * Frontend: GitHub Pages
+ * Backend: Supabase
+ *
+ * Important:
+ * - Database Row Level Security (RLS) must be configured in Supabase.
+ * - Public visitors can browse products; protected actions require sign-in.
+ * - Admin permissions are checked against public.admin_users.
+ * - This file never uses a Supabase secret/service-role key.
+ */
 
-const DEPARTMENTS = {
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  user: null,
+  profile: null,
+  isAdmin: false,
+  authMode: "login",
+  products: [],
+  filteredProducts: [],
+  selectedProduct: null,
+  cart: [],
+  activeConversationId: null,
+  activeFarmerId: null,
+  messageSubscription: null,
+  productLimit: 24
+};
+
+const CATEGORY_MAP = {
   "Fresh Produce": ["Fruits", "Vegetables", "Nuts"],
   "Crops & Grains": [
     "Starchy Foods", "Grains", "Cereals", "Legumes",
     "Spices", "Herbal Products"
   ],
-  "Farm Tools & Equipment": [
-    "Hand Tools", "Power Tools", "Farm Machinery",
-    "Irrigation Equipment", "Sprayers", "Harvesting Equipment",
-    "Storage Equipment", "Protective Equipment"
-  ],
+  "Farm Tools & Equipment": ["Farm Tools & Equipment"],
   "Agricultural Inputs & Fertilizers": [
-    "Seeds", "Seedlings", "Fertilizers", "Organic Manure",
-    "Compost", "Crop Protection", "Animal Feed", "Planting Materials"
+    "Agricultural Inputs & Fertilizers"
   ],
-  "Livestock & Poultry": [
-    "Cattle", "Goats", "Sheep", "Pigs", "Chickens",
-    "Ducks", "Turkeys", "Rabbits", "Other Livestock"
-  ],
-  "Animal & Farm Products": [
-    "Milk", "Eggs", "Honey", "Wool", "Hides & Skins",
-    "Processed Farm Products", "Other Farm Products"
-  ],
-  "Farm Services": [
-    "Tractor Hire", "Ploughing", "Planting", "Harvesting",
-    "Irrigation Installation", "Transport",
-    "Agricultural Consultancy", "Other Farm Services"
-  ]
+  "Livestock & Poultry": ["Livestock & Poultry"],
+  "Animal & Farm Products": ["Animal & Farm Products"],
+  "Farm Services": ["Farm Services"]
 };
 
-const LEGACY_CATEGORIES = [
-  "Fruits", "Vegetables", "Nuts", "Starchy Foods", "Grains",
-  "Cereals", "Legumes", "Spices", "Herbal Products"
-];
-
-const CATEGORIES = Object.values(DEPARTMENTS).flat();
-const CART_KEY = "shambamarket-cart-v2";
-
-const $ = (selector, parent = document) =>
-  parent.querySelector(selector);
-
-const $$ = (selector, parent = document) =>
-  [...parent.querySelectorAll(selector)];
-
-let currentUser = null;
-let currentProfile = null;
-let allListings = [];
-let selectedCategory = "All Categories";
-let selectedDepartment = "All";
-let selectedProduct = null;
-let cart = [];
-let authMode = "login";
-let messageChannel = null;
-let messageRefreshTimer = null;
-let activeConversation = null;
-let profileTable = "profiles";
-
-const KENYAN_COUNTIES = [
+const COUNTY_NAMES = [
   "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet",
   "Embu", "Garissa", "Homa Bay", "Isiolo", "Kajiado",
   "Kakamega", "Kericho", "Kiambu", "Kilifi", "Kirinyaga",
@@ -74,847 +55,854 @@ const KENYAN_COUNTIES = [
   "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
   "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River",
   "Tharaka-Nithi", "Trans Nzoia", "Turkana", "Uasin Gishu",
-  "Vihiga", "Wajir", "West Pokot", "Other"
+  "Vihiga", "Wajir", "West Pokot"
 ];
 
-/* -------------------- HELPERS -------------------- */
-
-function value(id) {
-  return $(`#${id}`)?.value?.trim() || "";
-}
-
-function setText(id, text) {
-  const element = $(`#${id}`);
-  if (element) element.textContent = text ?? "";
-}
-
-function status(id, message, error = false) {
-  const element = $(`#${id}`);
+function setStatus(id, message, isError = false) {
+  const element = $(id);
   if (!element) return;
-
-  element.textContent = message;
-  element.classList.toggle("error", error);
-  element.setAttribute("role", "status");
+  element.textContent = message || "";
+  element.style.color = isError ? "#b42318" : "";
 }
 
-function toast(message) {
-  const element = $("#toast");
-  if (!element) {
-    console.log(message);
+function setBusy(buttonId, busy, busyText = "Please wait...") {
+  const button = $(buttonId);
+  if (!button) return;
+  if (busy) {
+    button.dataset.originalText = button.textContent;
+    button.textContent = busyText;
+    button.disabled = true;
+  } else {
+    button.textContent = button.dataset.originalText || button.textContent;
+    button.disabled = false;
+  }
+}
+
+function escapeText(value) {
+  return String(value ?? "");
+}
+
+function formatKES(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "Price on request";
+  return "KES " + number.toLocaleString("en-KE", {
+    maximumFractionDigits: 2
+  });
+}
+
+function getProductName(product) {
+  return product.product_name || product.name || "Farm listing";
+}
+
+function getProductCategory(product) {
+  return product.subcategory || product.category || "Other";
+}
+
+function getProductOwnerId(product) {
+  return product.owner_id || product.farmer_id || product.user_id || null;
+}
+
+function getProductImage(product) {
+  return product.photo_url || product.image_url || product.image || "";
+}
+
+function showPage(pageId) {
+  const pages = document.querySelectorAll(".app-page");
+  let found = false;
+
+  pages.forEach((page) => {
+    const active = page.id === pageId;
+    page.hidden = !active;
+    if (active) found = true;
+  });
+
+  if (!found && pageId === "market-page") {
+    const market = $("market-page");
+    if (market) market.hidden = false;
+  }
+
+  if (pageId === "market-page") loadProducts();
+  if (pageId === "cart-page") renderCart();
+  if (pageId === "settings-page") renderSettings();
+  if (pageId === "messages-page") loadConversations();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function openAuth(mode = "login", message = "") {
+  state.authMode = mode;
+
+  if (window.shambaUI?.openAuth) {
+    window.shambaUI.openAuth(mode);
+  } else {
+    showPage("auth-page");
+  }
+
+  if ($("auth-form")) $("auth-form").hidden = false;
+  if ($("recovery-panel")) $("recovery-panel").hidden = true;
+  if ($("new-password-panel")) $("new-password-panel").hidden = true;
+
+  const signup = mode === "signup";
+  if ($("signup-fields")) $("signup-fields").hidden = !signup;
+  if ($("signup-password-field")) $("signup-password-field").hidden = !signup;
+  if ($("auth-submit")) $("auth-submit").textContent = signup ? "Create account" : "Log in";
+  if ($("auth-title")) $("auth-title").textContent = signup ? "Create your account" : "Welcome back";
+  if ($("show-login")) $("show-login").setAttribute("aria-pressed", String(!signup));
+  if ($("show-signup")) $("show-signup").setAttribute("aria-pressed", String(signup));
+  if ($("forgot-password-button")) $("forgot-password-button").hidden = signup;
+
+  setStatus("auth-status", message);
+}
+
+function updateHeader() {
+  const signedIn = Boolean(state.user);
+
+  if ($("account-label")) {
+    $("account-label").textContent = signedIn
+      ? (state.profile?.name || state.user.email || "Signed in")
+      : "Browsing as guest";
+  }
+
+  if ($("logout-button")) $("logout-button").hidden = !signedIn;
+  if ($("header-login-button")) $("header-login-button").hidden = signedIn;
+
+  document.querySelectorAll("[data-protected='true']").forEach((button) => {
+    button.setAttribute("aria-label", signedIn
+      ? button.textContent.trim()
+      : `${button.textContent.trim()} — sign in required`);
+  });
+}
+
+async function loadProfile() {
+  if (!state.user) {
+    state.profile = null;
     return;
   }
 
-  element.textContent = message;
-  element.classList.add("visible", "show");
+  // Profiles are optional for the public catalogue to work.
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", state.user.id)
+    .maybeSingle();
 
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(
-    () => element.classList.remove("visible", "show"),
-    3500
-  );
-}
-
-function escapeHTML(text = "") {
-  return String(text).replace(/[&<>"']/g, char => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;",
-    '"': "&quot;", "'": "&#039;"
-  })[char]);
-}
-
-function price(amount) {
-  return new Intl.NumberFormat("en-KE", {
-    style: "currency",
-    currency: "KES",
-    maximumFractionDigits: 2
-  }).format(Number(amount) || 0);
-}
-
-function makeElement(tag, className = "", text = "") {
-  const element = document.createElement(tag);
-  if (className) element.className = className;
-  if (text !== undefined && text !== null) element.textContent = text;
-  return element;
-}
-
-function makeButton(label, className, callback) {
-  const button = makeElement("button", className, label);
-  button.type = "button";
-  button.addEventListener("click", callback);
-  return button;
-}
-
-function normalizePhone(input = "") {
-  let phone = String(input).replace(/[^\d+]/g, "");
-
-  if (phone.startsWith("+")) phone = phone.slice(1);
-  if (phone.startsWith("00")) phone = phone.slice(2);
-
-  if (phone.startsWith("0") && phone.length === 10) {
-    phone = "254" + phone.slice(1);
-  } else if (/^[17]\d{8}$/.test(phone)) {
-    phone = "254" + phone;
+  if (error) {
+    console.warn("Profile could not be loaded:", error.message);
+    state.profile = {
+      id: state.user.id,
+      email: state.user.email,
+      name: state.user.user_metadata?.name || ""
+    };
+    return;
   }
 
-  return /^254\d{9}$/.test(phone) ? phone : "";
+  state.profile = data || {
+    id: state.user.id,
+    email: state.user.email,
+    name: state.user.user_metadata?.name || ""
+  };
 }
 
-function userName() {
-  return currentProfile?.name ||
-    currentUser?.user_metadata?.name ||
-    currentUser?.email?.split("@")[0] ||
-    "Marketplace member";
+async function checkAdminRole() {
+  state.isAdmin = false;
+  if (!state.user) return false;
+
+  // The admin_users table must be created and protected in Supabase.
+  // Only a trusted administrator should be able to add rows to it.
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", state.user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Admin role verification failed:", error.message);
+    return false;
+  }
+
+  state.isAdmin = Boolean(data?.user_id);
+  return state.isAdmin;
 }
 
-function userRole() {
-  return currentProfile?.role ||
-    currentUser?.user_metadata?.role ||
-    "customer";
+async function refreshAuthState() {
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error) console.warn("Could not read current user:", error.message);
+
+  state.user = data?.user || null;
+  await loadProfile();
+  updateHeader();
 }
 
-function departmentFor(category) {
-  return Object.entries(DEPARTMENTS).find(
-    ([, categories]) => categories.includes(category)
-  )?.[0] || "Other";
+async function finishLogin() {
+  await refreshAuthState();
+
+  if (!state.user) {
+    openAuth("login", "Please sign in to continue.");
+    return;
+  }
+
+  await checkAdminRole();
+
+  if ($("admin-login-page")) $("admin-login-page").hidden = true;
+  if ($("admin-page")) $("admin-page").hidden = true;
+
+  updateHeader();
+  showPage("market-page");
+  await loadProducts();
 }
 
-function listingDepartment(item) {
-  const match = String(item.description || "").match(/^Department:\s*(.+)$/m);
-  return match?.[1]?.trim() || departmentFor(item.category);
+function isSignedIn() {
+  return Boolean(state.user);
 }
+
+window.shambaAuth = {
+  isSignedIn
+};
 
 /* -------------------- AUTHENTICATION -------------------- */
 
-function setAuthMode(mode) {
-  authMode = mode;
-  const signup = mode === "signup";
+function setupAuthTabs() {
+  $("show-login")?.addEventListener("click", () => openAuth("login"));
+  $("show-signup")?.addEventListener("click", () => openAuth("signup"));
 
-  if ($("#signup-fields")) $("#signup-fields").hidden = !signup;
-  if ($("#auth-name")) $("#auth-name").required = signup;
+  $("header-login-button")?.addEventListener("click", () => openAuth("login"));
 
-  setText("auth-title", signup ? "Create your account" : "Welcome back");
-  setText(
-    "auth-description",
-    signup
-      ? "Join Kenya's agricultural marketplace."
-      : "Sign in to explore ShambaMarket."
-  );
-  setText("auth-submit", signup ? "Create account" : "Sign in");
-
-  $("#show-login")?.classList.toggle("active", !signup);
-  $("#show-signup")?.classList.toggle("active", signup);
-
-  status("auth-status", "");
-}
-
-async function getProfile(user, fallback = {}) {
-  const profile = {
-    id: user.id,
-    name: fallback.name || user.user_metadata?.name ||
-      user.email?.split("@")[0] || "Member",
-    email: user.email || "",
-    role: fallback.role || user.user_metadata?.role || "customer",
-    phone: fallback.phone || user.user_metadata?.phone || ""
-  };
-
-  // Try the common table name first, then the singular name.
-  for (const table of ["profiles", "profile"]) {
-    const result = await supabase
-      .from(table)
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (result.error) {
-      if (
-        result.error.code === "42P01" ||
-        result.error.code === "PGRST205"
-      ) {
-        continue;
-      }
-
-      // Do not silently ignore permission or other database errors.
-      throw result.error;
+  $("logout-button")?.addEventListener("click", async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      alert("Could not log out: " + error.message);
+      return;
     }
 
-    profileTable = table;
+    state.user = null;
+    state.profile = null;
+    state.isAdmin = false;
+    state.activeConversationId = null;
+    updateHeader();
+    openAuth("login", "You have logged out.");
+    showPage("market-page");
+  });
 
-    if (result.data) return result.data;
-
-    const inserted = await supabase
-      .from(table)
-      .insert(profile)
-      .select()
-      .single();
-
-    if (!inserted.error) return inserted.data;
-
-    // A missing optional profile table should not prevent browsing.
-    if (
-      inserted.error.code === "42P01" ||
-      inserted.error.code === "PGRST205"
-    ) {
-      continue;
-    }
-
-    throw inserted.error;
-  }
-
-  // Auth metadata remains available if neither profile table exists.
-  return profile;
+  $("auth-form")?.addEventListener("submit", handleAuthSubmit);
+  $("admin-login-form")?.addEventListener("submit", handleAdminLogin);
+  $("recovery-form")?.addEventListener("submit", handlePasswordRecovery);
+  $("new-password-form")?.addEventListener("submit", handleNewPassword);
 }
 
-async function handleAuth(event) {
+async function handleAuthSubmit(event) {
   event.preventDefault();
 
-  const email = value("auth-email").toLowerCase();
-  const password = $("#auth-password")?.value || "";
-  const button = $("#auth-submit");
+  const email = $("auth-email")?.value.trim().toLowerCase();
+  const password = $("auth-password")?.value || "";
+  const signup = state.authMode === "signup";
 
   if (!email || !password) {
-    status("auth-status", "Enter your email and password.", true);
+    setStatus("auth-status", "Enter your email and password.", true);
     return;
   }
 
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Please wait...";
-  }
+  setBusy("auth-submit", true, signup ? "Creating account..." : "Signing in...");
 
   try {
-    if (authMode === "signup") {
-      const name = value("auth-name");
-      const role = value("auth-role") || "customer";
+    if (signup) {
+      const name = $("auth-name")?.value.trim() || "";
+      const role = $("auth-role")?.value || "customer";
+      const confirmPassword = $("signup-password-confirm")?.value || "";
 
-      if (!name) throw new Error("Enter your name.");
+      if (!name) throw new Error("Enter your full name.");
+      if (password.length < 8) throw new Error("Use a password with at least 8 characters.");
+      if (password !== confirmPassword) throw new Error("Your passwords do not match.");
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name, role, phone: "" } }
+        options: {
+          emailRedirectTo: window.location.href.split("#")[0],
+          data: {
+            name,
+            account_type: ["farmer", "customer"].includes(role) ? role : "customer"
+          }
+        }
       });
 
       if (error) throw error;
 
-      if (data.user && data.session) {
-        currentUser = data.user;
-        currentProfile = await getProfile(data.user, { name, role });
-        await startApp();
-        toast("Account created!");
+      if (data.session) {
+        state.user = data.user;
+        await loadProfile();
+        updateHeader();
+        await finishLogin();
+        setStatus("auth-status", "Account created successfully.");
       } else {
-        setAuthMode("login");
-        status(
+        setStatus(
           "auth-status",
-          "Check your email to confirm your account, then sign in."
+          "Account created. Check your email for the confirmation link before signing in."
         );
       }
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) throw error;
-
-      currentUser = data.user;
-      currentProfile = await getProfile(data.user);
-      await startApp();
-      toast("Welcome back!");
+      await finishLogin();
+      setStatus("auth-status", "Signed in successfully.");
     }
   } catch (error) {
-    console.error("Authentication error:", error);
-    status("auth-status", error.message || "Sign-in failed.", true);
+    setStatus("auth-status", error.message || "Authentication failed.", true);
   } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = authMode === "signup" ? "Create account" : "Sign in";
-    }
+    setBusy("auth-submit", false);
   }
 }
 
-function showAuth() {
-  stopMessaging();
-  if ($("#auth-page")) $("#auth-page").hidden = false;
-  if ($("#app-shell")) $("#app-shell").hidden = true;
-  setAuthMode("login");
-}
+async function handleAdminLogin(event) {
+  event.preventDefault();
 
-/* -------------------- NAVIGATION -------------------- */
+  const email = $("admin-email")?.value.trim().toLowerCase();
+  const password = $("admin-password")?.value || "";
 
-function showPage(name) {
-  $$(".app-page").forEach(page => {
-    const visible = page.id === `${name}-page`;
-    page.hidden = !visible;
-    page.classList.toggle("active", visible);
-  });
-
-  $$(".nav-link[data-page]").forEach(link => {
-    link.classList.toggle("active", link.dataset.page === name);
-  });
-
-  if (name === "market") loadListings();
-  if (name === "farmer") loadFarmerListings();
-  if (name === "cart") renderCart();
-  if (name === "messages") loadConversations();
-}
-
-function setupNavigation() {
-  $$(".nav-link[data-page]").forEach(link => {
-    link.addEventListener("click", () => showPage(link.dataset.page));
-  });
-
-  $("#sell-button")?.addEventListener("click", () => {
-    if (userRole() !== "farmer") {
-      toast("Sign in with a farmer account to publish listings.");
-      return;
-    }
-    showPage("farmer");
-  });
-
-  $("#browse-button")?.addEventListener("click", () => {
-    $("#marketplace")?.scrollIntoView({ behavior: "smooth" });
-  });
-
-  $("#details-back-button")?.addEventListener("click", () => showPage("market"));
-  $("#cart-continue-button")?.addEventListener("click", () => showPage("market"));
-  $("#cart-contact-button")?.addEventListener("click", contactCartSellers);
-}
-
-/* -------------------- CATEGORIES -------------------- */
-
-function setupCategories() {
-  const categoryList = $("#category-list");
-  const departmentSelect = $("#product-category");
-
-  if (categoryList) {
-    categoryList.replaceChildren();
-
-    ["All Categories", ...CATEGORIES].forEach(category => {
-      const button = makeButton(category, "category-chip", () => {
-        selectedCategory = category;
-        selectedDepartment = "All";
-        $$(".category-chip", categoryList).forEach(chip => {
-          chip.classList.toggle("active", chip.textContent === category);
-        });
-        renderListings();
-      });
-
-      if (category === selectedCategory) button.classList.add("active");
-      categoryList.appendChild(button);
-    });
-  }
-
-  if (departmentSelect) {
-    departmentSelect.replaceChildren();
-    departmentSelect.add(new Option("Choose a department", ""));
-
-    Object.keys(DEPARTMENTS).forEach(department => {
-      departmentSelect.add(new Option(department, department));
-    });
-
-    departmentSelect.addEventListener("change", updateSubcategories);
-  }
-
-  $("#market-category-grid")?.addEventListener("click", event => {
-    const button = event.target.closest("[data-market-category]");
-    if (!button) return;
-
-    const choice = button.dataset.marketCategory;
-
-    if (choice === "All") {
-      selectedDepartment = "All";
-      selectedCategory = "All Categories";
-    } else if (DEPARTMENTS[choice]) {
-      selectedDepartment = choice;
-      selectedCategory = "All Categories";
-    } else if (CATEGORIES.includes(choice)) {
-      selectedDepartment = "All";
-      selectedCategory = choice;
-    } else {
-      selectedDepartment = "All";
-      selectedCategory = "All Categories";
-    }
-
-    renderListings();
-    $("#marketplace")?.scrollIntoView({ behavior: "smooth" });
-  });
-}
-
-function updateSubcategories() {
-  const department = value("product-category");
-  const select = $("#product-subcategory");
-  if (!select) return;
-
-  select.replaceChildren();
-  select.add(new Option("Choose a category", ""));
-
-  (DEPARTMENTS[department] || []).forEach(category => {
-    select.add(new Option(category, category));
-  });
-
-  select.required = Boolean(department);
-  renderDynamicFields(department);
-  updateUnitOptions(department);
-}
-
-function renderDynamicFields(department) {
-  const container = $("#dynamic-product-fields");
-  if (!container) return;
-
-  container.replaceChildren();
-
-  const fields = {
-    "Livestock & Poultry": [
-      ["Breed", "extra-breed", "text", "e.g. Friesian"],
-      ["Age", "extra-age", "text", "e.g. 18 months"],
-      ["Health information", "extra-health", "text", "Relevant details"]
-    ],
-    "Agricultural Inputs & Fertilizers": [
-      ["Brand", "extra-brand", "text", "Brand name"],
-      ["Package size", "extra-package", "text", "e.g. 25 kg bag"],
-      ["Expiry date", "extra-expiry", "date", ""]
-    ],
-    "Farm Tools & Equipment": [
-      ["Brand / model", "extra-brand", "text", "Brand or model"],
-      ["Equipment condition", "extra-condition", "select", "New,Used,Refurbished"]
-    ],
-    "Farm Services": [
-      ["Service area", "extra-area", "text", "Areas served"],
-      ["Pricing basis", "extra-basis", "select", "Per acre,Per hour,Per day,Per trip,Fixed fee"]
-    ],
-    "Animal & Farm Products": [
-      ["Packaging details", "extra-package", "text", "Packaging or quality details"]
-    ]
-  };
-
-  (fields[department] || []).forEach(([label, id, type, hint]) => {
-    const wrapper = makeElement("div", "form-field");
-    const labelElement = makeElement("label", "", label);
-    labelElement.htmlFor = id;
-
-    let input;
-
-    if (type === "select") {
-      input = document.createElement("select");
-      input.add(new Option("Choose an option", ""));
-      hint.split(",").forEach(option => input.add(new Option(option, option)));
-    } else {
-      input = document.createElement("input");
-      input.type = type;
-      if (hint) input.placeholder = hint;
-    }
-
-    input.id = id;
-    input.dataset.extraField = "true";
-    wrapper.append(labelElement, input);
-    container.appendChild(wrapper);
-  });
-}
-
-function updateUnitOptions(department) {
-  const select = $("#product-unit");
-  if (!select) return;
-
-  const options = {
-    "Livestock & Poultry": ["animal", "bird", "piece"],
-    "Farm Services": ["service", "acre", "hour", "day", "trip"],
-    "Agricultural Inputs & Fertilizers": ["kg", "bag", "sack", "tonne", "packet", "litre", "item"],
-    "Farm Tools & Equipment": ["item", "piece", "day", "hour"],
-    "Animal & Farm Products": ["kg", "litre", "piece", "crate", "item"]
-  }[department] || [
-    "kg", "bag", "crate", "piece", "bunch", "litre", "sack", "tonne"
-  ];
-
-  const labels = {
-    kg: "Kilograms (kg)", bag: "Bags", crate: "Crates",
-    piece: "Pieces", bunch: "Bunches", litre: "Litres",
-    animal: "Animals", bird: "Birds", packet: "Packets",
-    sack: "Sacks", tonne: "Tonnes", hour: "Hours",
-    day: "Days", acre: "Acres", service: "Services",
-    item: "Items", trip: "Trips"
-  };
-
-  const previous = select.value;
-  select.replaceChildren();
-
-  options.forEach(option => select.add(new Option(labels[option] || option, option)));
-  if (options.includes(previous)) select.value = previous;
-}
-
-function setupCountyFilter() {
-  const select = $("#county-filter");
-  if (!select) return;
-
-  const previous = select.value;
-  select.replaceChildren();
-  select.add(new Option("All counties", ""));
-
-  KENYAN_COUNTIES.forEach(county => select.add(new Option(county, county)));
-  select.value = previous;
-}
-
-/* -------------------- MARKETPLACE -------------------- */
-
-async function loadListings() {
-  status("market-status", "Loading marketplace...");
-
-  const { data, error } = await supabase
-    .from("listings")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Listings error:", error);
-    allListings = [];
-    renderListings();
-    status("market-status", "Could not load listings. Check table permissions.", true);
+  if (!email || !password) {
+    setStatus("admin-login-status", "Enter your administrator email and password.", true);
     return;
   }
 
-  allListings = data || [];
-  renderListings();
+  setBusy("admin-login-submit", true, "Verifying access...");
 
-  status(
-    "market-status",
-    allListings.length ? `${allListings.length} listings available` : "No listings yet."
-  );
-}
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
 
-function filteredListings() {
-  const search = value("search-input").toLowerCase();
-  const county = value("county-filter").toLowerCase();
-  const sort = value("sort-products");
+    await refreshAuthState();
+    const authorised = await checkAdminRole();
 
-  let items = [...allListings];
-
-  if (selectedDepartment !== "All") {
-    items = items.filter(item => listingDepartment(item) === selectedDepartment);
-  }
-
-  if (selectedCategory !== "All Categories") {
-    items = items.filter(item => item.category === selectedCategory);
-  }
-
-  if (search) {
-    items = items.filter(item => [
-      item.product_name, item.category, item.county, item.town,
-      item.farmer_name, item.description
-    ].join(" ").toLowerCase().includes(search));
-  }
-
-  if (county) {
-    items = items.filter(item => (item.county || "").toLowerCase() === county);
-  }
-
-  if (sort === "price-low") {
-    items.sort((a, b) => Number(a.price) - Number(b.price));
-  } else if (sort === "price-high") {
-    items.sort((a, b) => Number(b.price) - Number(a.price));
-  } else {
-    items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-  }
-
-  return items;
-}
-
-function renderListings() {
-  const container = $("#product-list");
-  if (!container) return;
-
-  const items = filteredListings();
-  container.replaceChildren();
-  setText("listing-summary", `${items.length} listing(s) found`);
-
-  if ($("#empty-message")) $("#empty-message").hidden = items.length > 0;
-
-  items.forEach(item => {
-    const card = makeElement("article", "product-card");
-
-    if (item.photo_url) {
-      const image = makeElement("img", "product-photo");
-      image.src = item.photo_url;
-      image.alt = item.product_name || "Product photo";
-      image.loading = "lazy";
-      image.onerror = () => image.remove();
-      card.appendChild(image);
-    } else {
-      card.appendChild(makeElement("div", "product-photo product-photo-placeholder", "🌱"));
+    if (!authorised) {
+      await supabase.auth.signOut();
+      state.user = null;
+      state.profile = null;
+      state.isAdmin = false;
+      updateHeader();
+      throw new Error(
+        "This account has not been granted administrator access. Ask the project owner to verify its role."
+      );
     }
 
-    const body = makeElement("div", "product-body");
-    body.append(
-      makeElement("span", "product-category-label", item.category || "Other"),
-      makeElement("h3", "", item.product_name || "Untitled listing"),
-      makeElement("p", "product-price", `${price(item.price)} / ${item.unit || "item"}`),
-      makeElement("p", "product-meta", `Available: ${item.quantity ?? "Ask seller"} ${item.unit || ""}`),
-      makeElement("p", "product-meta", `📍 ${[item.town, item.county].filter(Boolean).join(", ") || "Location not provided"}`),
-      makeElement("p", "product-meta", `Seller: ${item.farmer_name || "Local seller"}`)
-    );
+    $("admin-login-page").hidden = true;
+    $("admin-page").hidden = false;
+    $("admin-status").textContent = "Administrator role verified.";
+    await loadAdminOverview();
+  } catch (error) {
+    setStatus("admin-login-status", error.message || "Administrator sign-in failed.", true);
+  } finally {
+    setBusy("admin-login-submit", false);
+  }
+}
 
-    const actions = makeElement("div", "product-actions");
-    actions.append(
-      makeButton("View details", "button button-primary", () => openProductDetails(item)),
-      makeButton("Message seller", "button button-outline", () => startConversation(item))
-    );
+async function handlePasswordRecovery(event) {
+  event.preventDefault();
 
-    body.appendChild(actions);
-    card.appendChild(body);
-    container.appendChild(card);
+  const email = $("recovery-email")?.value.trim().toLowerCase();
+  if (!email) {
+    setStatus("recovery-status", "Enter your account email.", true);
+    return;
+  }
+
+  try {
+    const redirectTo = window.location.href.split("#")[0];
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo
+    });
+
+    if (error) throw error;
+
+    setStatus(
+      "recovery-status",
+      "If an account is associated with that email, a recovery link will be sent. Check your inbox and spam folder."
+    );
+  } catch (error) {
+    setStatus("recovery-status", error.message || "Could not request password recovery.", true);
+  }
+}
+
+async function handleNewPassword(event) {
+  event.preventDefault();
+
+  const password = $("new-password")?.value || "";
+  const confirmation = $("new-password-confirm")?.value || "";
+
+  if (password.length < 8) {
+    setStatus("new-password-status", "Use at least 8 characters for your new password.", true);
+    return;
+  }
+
+  if (password !== confirmation) {
+    setStatus("new-password-status", "The passwords do not match.", true);
+    return;
+  }
+
+  try {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+
+    setStatus("new-password-status", "Password updated. You can now use your new password.");
+    $("new-password-form").reset();
+  } catch (error) {
+    setStatus(
+      "new-password-status",
+      error.message || "Password update failed. Open a fresh recovery link and try again.",
+      true
+    );
+  }
+}
+
+function setupRecoveryEvents() {
+  supabase.auth.onAuthStateChange((event, session) => {
+    // Avoid performing additional Supabase requests inside this callback.
+    if (event === "PASSWORD_RECOVERY") {
+      setTimeout(() => {
+        showPage("auth-page");
+        if ($("auth-form")) $("auth-form").hidden = true;
+        if ($("recovery-panel")) $("recovery-panel").hidden = true;
+        if ($("new-password-panel")) $("new-password-panel").hidden = false;
+        setStatus("new-password-status", "Choose a new password for your account.");
+      }, 0);
+    }
+
+    if (event === "SIGNED_OUT") {
+      state.user = null;
+      state.profile = null;
+      state.isAdmin = false;
+      updateHeader();
+    }
+
+    if (event === "SIGNED_IN" && session?.user) {
+      state.user = session.user;
+      setTimeout(() => finishLogin(), 0);
+    }
   });
+}
+
+/* -------------------- PUBLIC PRODUCT CATALOGUE -------------------- */
+
+async function loadProducts() {
+  const status = $("market-status");
+  if (status) status.textContent = "Loading listings...";
+
+  try {
+    // Public access depends on SELECT policies in Supabase RLS.
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .limit(500);
+
+    if (error) throw error;
+
+    // The database policy must already prevent unpublished/private rows
+    // from being returned to public visitors.
+    state.products = (data || []).filter((product) => {
+      if (product.is_published === false) return false;
+      if (product.published === false) return false;
+      if (product.status && ["draft", "hidden", "deleted"].includes(
+        String(product.status).toLowerCase()
+      )) return false;
+      return true;
+    });
+
+    applyProductFilters();
+  } catch (error) {
+    state.products = [];
+    state.filteredProducts = [];
+    renderProducts();
+
+    if (status) {
+      status.textContent =
+        "Listings could not be loaded. Check that the products table exists and its public-read policy is configured in Supabase. Details: " +
+        (error.message || "Unknown error");
+    }
+  }
+}
+
+function applyProductFilters() {
+  const query = ($("search-input")?.value || "").trim().toLowerCase();
+  const county = ($("county-filter")?.value || "").trim().toLowerCase();
+  const sort = $("sort-filter")?.value || "newest";
+
+  let products = state.products.filter((product) => {
+    const searchable = [
+      getProductName(product),
+      product.category,
+      product.subcategory,
+      product.description,
+      product.county,
+      product.town,
+      product.farmer_name
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    const matchesQuery = !query || searchable.includes(query);
+    const matchesCounty = !county || String(product.county || "").toLowerCase() === county;
+    return matchesQuery && matchesCounty;
+  });
+
+  if (sort === "price-low") {
+    products.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+  } else if (sort === "price-high") {
+    products.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+  } else if (sort === "name") {
+    products.sort((a, b) => getProductName(a).localeCompare(getProductName(b)));
+  } else {
+    products.sort((a, b) => {
+      const aDate = new Date(a.created_at || 0).getTime();
+      const bDate = new Date(b.created_at || 0).getTime();
+      return bDate - aDate;
+    });
+  }
+
+  state.filteredProducts = products;
+  renderProducts();
+}
+
+function createElement(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
+
+function renderProducts() {
+  const container = $("product-list");
+  if (!container) return;
+
+  container.replaceChildren();
+
+  if (!state.filteredProducts.length) {
+    container.append(
+      createElement("p", "sm-muted", "No listings found. Try another search or county.")
+    );
+    if ($("market-status")) $("market-status").textContent = "0 listings found.";
+    return;
+  }
+
+  if ($("market-status")) {
+    $("market-status").textContent = `${state.filteredProducts.length} listing(s) found.`;
+  }
+
+  const products = state.filteredProducts.slice(0, state.productLimit);
+
+  products.forEach((product) => {
+    const card = createElement("article", "sm-product-card");
+    const imageUrl = getProductImage(product);
+
+    if (imageUrl) {
+      try {
+        const parsed = new URL(imageUrl, window.location.href);
+        if (["http:", "https:"].includes(parsed.protocol)) {
+          const image = createElement("img", "sm-photo");
+          image.src = parsed.href;
+          image.alt = getProductName(product);
+          image.loading = "lazy";
+          image.onerror = () => image.remove();
+          card.append(image);
+        }
+      } catch {
+        // Ignore invalid image URLs.
+      }
+    }
+
+    card.append(
+      createElement("p", "sm-muted", getProductCategory(product)),
+      createElement("h3", "", getProductName(product)),
+      createElement("p", "sm-price", formatKES(product.price)),
+      createElement("p", "", `${product.quantity ?? "Quantity on request"} ${product.unit || ""}`.trim()),
+      createElement("p", "sm-muted", [product.town, product.county].filter(Boolean).join(", ") || "Location not supplied")
+    );
+
+    const actions = createElement("div", "sm-actions");
+
+    const detailsButton = createElement("button", "sm-secondary", "View details");
+    detailsButton.type = "button";
+    detailsButton.addEventListener("click", () => openProductDetails(product));
+
+    const cartButton = createElement("button", "sm-primary", "Add to cart");
+    cartButton.type = "button";
+    cartButton.addEventListener("click", () => addToCart(product));
+
+    actions.append(detailsButton, cartButton);
+    card.append(actions);
+    container.append(card);
+  });
+
+  const pagination = $("product-pagination");
+  if (pagination) {
+    pagination.replaceChildren();
+
+    if (state.filteredProducts.length > state.productLimit) {
+      const more = createElement("button", "sm-secondary", "Load more");
+      more.type = "button";
+      more.addEventListener("click", () => {
+        state.productLimit += 24;
+        renderProducts();
+      });
+      pagination.append(more);
+    }
+  }
+}
+
+function openProductDetails(product) {
+  state.selectedProduct = product;
+  const container = $("product-details");
+  if (!container) return;
+
+  container.replaceChildren();
+
+  const imageUrl = getProductImage(product);
+  if (imageUrl) {
+    try {
+      const parsed = new URL(imageUrl, window.location.href);
+      if (["http:", "https:"].includes(parsed.protocol)) {
+        const image = createElement("img", "sm-photo");
+        image.src = parsed.href;
+        image.alt = getProductName(product);
+        container.append(image);
+      }
+    } catch {}
+  }
+
+  container.append(
+    createElement("h2", "", getProductName(product)),
+    createElement("p", "sm-price", formatKES(product.price)),
+    createElement("p", "", `Category: ${getProductCategory(product)}`),
+    createElement("p", "", `Quantity: ${product.quantity ?? "Ask seller"} ${product.unit || ""}`),
+    createElement("p", "", `Location: ${[product.town, product.county].filter(Boolean).join(", ") || "Not supplied"}`),
+    createElement("p", "", `Farmer: ${product.farmer_name || "Seller"}`),
+    createElement("p", "", product.description || "No description supplied.")
+  );
+
+  showPage("details-page");
 }
 
 function setupMarketFilters() {
-  ["search-input", "county-filter", "sort-products"].forEach(id => {
-    const element = $(`#${id}`);
-    if (element) element.addEventListener(
-      element.tagName === "SELECT" ? "change" : "input",
-      renderListings
-    );
-  });
-}
+  $("search-input")?.addEventListener("input", applyProductFilters);
+  $("county-filter")?.addEventListener("change", applyProductFilters);
+  $("sort-filter")?.addEventListener("change", applyProductFilters);
 
-/* -------------------- PRODUCT DETAILS -------------------- */
-
-function openProductDetails(item) {
-  selectedProduct = item;
-  const container = $("#product-details-content");
-  if (!container) return;
-
-  container.replaceChildren();
-  const panel = makeElement("article", "panel product-detail-panel");
-
-  if (item.photo_url) {
-    const image = makeElement("img", "product-detail-image");
-    image.src = item.photo_url;
-    image.alt = item.product_name || "Product photo";
-    panel.appendChild(image);
-  }
-
-  panel.append(
-    makeElement("p", "eyebrow", listingDepartment(item)),
-    makeElement("h2", "", item.product_name || "Untitled listing"),
-    makeElement("h3", "product-price", `${price(item.price)} / ${item.unit || "item"}`)
-  );
-
-  const details = makeElement("div", "product-detail-info");
-
-  [
-    ["Department", listingDepartment(item)],
-    ["Category", item.category],
-    ["Condition", item.condition],
-    ["Quantity", `${item.quantity ?? "Unknown"} ${item.unit || ""}`],
-    ["County", item.county],
-    ["Town", item.town],
-    ["Seller", item.farmer_name],
-    ["Description", String(item.description || "").replace(/^Department:\s*.+\n?/, "")]
-  ].forEach(([label, detail]) => {
-    const line = makeElement("p");
-    line.append(
-      makeElement("strong", "", `${label}: `),
-      document.createTextNode(detail || "Not provided")
-    );
-    details.appendChild(line);
+  $("hero-browse-button")?.addEventListener("click", () => {
+    $("marketplace")?.scrollIntoView({ behavior: "smooth" });
   });
 
-  panel.appendChild(details);
+  $("brand-home")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    showPage("market-page");
+  });
 
-  const actions = makeElement("div", "product-actions");
-  actions.append(
-    makeButton("Add to cart", "button button-primary", () => addToCart(item)),
-    makeButton("Message seller", "button button-outline", () => startConversation(item))
-  );
+  $("hero-sell-button")?.addEventListener("click", () => {
+    if (!state.user) {
+      openAuth("login", "Sign in to publish a listing.");
+      return;
+    }
+    showPage("farmer-page");
+  });
 
-  const phone = normalizePhone(item.phone);
-
-  if (phone) {
-    const call = makeElement("a", "button button-outline", "Call seller");
-    call.href = `tel:+${phone}`;
-    actions.appendChild(call);
-
-    const whatsapp = makeElement("a", "button button-outline", "WhatsApp");
-    whatsapp.href = `https://wa.me/${phone}?text=${encodeURIComponent(
-      `Hello, I am interested in ${item.product_name} on ShambaMarket.`
-    )}`;
-    whatsapp.target = "_blank";
-    whatsapp.rel = "noopener noreferrer";
-    actions.appendChild(whatsapp);
-  }
-
-  panel.appendChild(actions);
-  container.appendChild(panel);
-  showPage("details");
-}
-
-/* -------------------- CART -------------------- */
-
-function loadCart() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
-    cart = Array.isArray(stored) ? stored : [];
-  } catch {
-    cart = [];
-  }
-}
-
-function saveCart() {
-  try {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  } catch {
-    toast("Could not save the cart in this browser.");
-  }
-  setText("cart-count", cart.reduce((sum, item) => sum + item.cartQuantity, 0));
-}
-
-function addToCart(item) {
-  if (!item?.id) return toast("This listing has no ID.");
-
-  if (currentUser && item.owner_id === currentUser.id) {
-    return toast("You cannot add your own listing to the cart.");
-  }
-
-  const existing = cart.find(row => String(row.id) === String(item.id));
-  const available = Math.max(1, Number(item.quantity) || 1);
-
-  if (existing) {
-    if (existing.cartQuantity >= available) return toast("Maximum listed quantity reached.");
-    existing.cartQuantity++;
-  } else {
-    cart.push({
-      id: item.id,
-      product_name: item.product_name,
-      category: item.category,
-      price: Number(item.price) || 0,
-      unit: item.unit || "item",
-      quantity: available,
-      phone: item.phone || "",
-      farmer_name: item.farmer_name || "",
-      cartQuantity: 1
+  document.querySelectorAll("[data-category]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if ($("search-input")) {
+        $("search-input").value = button.dataset.category || "";
+        applyProductFilters();
+      }
+      $("marketplace")?.scrollIntoView({ behavior: "smooth" });
     });
-  }
-
-  saveCart();
-  toast("Added to cart.");
+  });
 }
 
-function renderCart() {
-  const container = $("#cart-items");
-  if (!container) return;
+/* -------------------- CART AND ORDER ENQUIRIES -------------------- */
 
-  container.replaceChildren();
-
-  if (!cart.length) {
-    container.appendChild(makeElement("p", "muted", "Your cart is empty."));
-    setText("cart-subtotal", price(0));
-    status("cart-status", "");
+function addToCart(product) {
+  if (!state.user) {
+    openAuth("login", "Sign in to add items to your cart.");
     return;
   }
 
-  cart.forEach(item => {
-    const row = makeElement("article", "cart-item");
+  const productId = product.id;
+  if (!productId) {
+    alert("This listing has no product ID, so it cannot be added to the cart.");
+    return;
+  }
+
+  const existing = state.cart.find((item) => item.product.id === productId);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    state.cart.push({ product, quantity: 1 });
+  }
+
+  renderCart();
+  alert("Added to your cart.");
+}
+
+function renderCart() {
+  const container = $("cart-items");
+  if (!container) return;
+
+  container.replaceChildren();
+
+  if ($("cart-count")) {
+    $("cart-count").textContent = String(
+      state.cart.reduce((sum, item) => sum + item.quantity, 0)
+    );
+  }
+
+  if (!state.user) {
+    container.append(createElement("p", "", "Sign in to use your cart."));
+    if ($("cart-subtotal")) $("cart-subtotal").textContent = "Subtotal: KES 0";
+    return;
+  }
+
+  if (!state.cart.length) {
+    container.append(createElement("p", "", "Your cart is empty."));
+    if ($("cart-subtotal")) $("cart-subtotal").textContent = "Subtotal: KES 0";
+    return;
+  }
+
+  let subtotal = 0;
+
+  state.cart.forEach((item, index) => {
+    const product = item.product;
+    const lineTotal = Number(product.price || 0) * item.quantity;
+    subtotal += lineTotal;
+
+    const row = createElement("article", "sm-product-card");
     row.append(
-      makeElement("h3", "", item.product_name),
-      makeElement("p", "", `${price(item.price)} / ${item.unit}`),
-      makeElement("p", "", `Quantity: ${item.cartQuantity}`),
-      makeElement("p", "", `Subtotal: ${price(item.price * item.cartQuantity)}`)
+      createElement("h3", "", getProductName(product)),
+      createElement("p", "", `${formatKES(product.price)} × ${item.quantity}`),
+      createElement("p", "sm-price", formatKES(lineTotal))
     );
 
-    const actions = makeElement("div", "cart-item-actions");
-    actions.append(
-      makeButton("−", "button button-outline", () => changeCart(item.id, -1)),
-      makeButton("+", "button button-outline", () => changeCart(item.id, 1)),
-      makeButton("Remove", "button button-outline", () => removeCart(item.id))
-    );
+    const actions = createElement("div", "sm-actions");
+    const minus = createElement("button", "sm-secondary", "−");
+    minus.type = "button";
+    minus.setAttribute("aria-label", "Decrease quantity");
+    minus.addEventListener("click", () => {
+      item.quantity -= 1;
+      if (item.quantity <= 0) state.cart.splice(index, 1);
+      renderCart();
+    });
 
-    row.appendChild(actions);
-    container.appendChild(row);
+    const plus = createElement("button", "sm-secondary", "+");
+    plus.type = "button";
+    plus.setAttribute("aria-label", "Increase quantity");
+    plus.addEventListener("click", () => {
+      item.quantity += 1;
+      renderCart();
+    });
+
+    const remove = createElement("button", "sm-link", "Remove");
+    remove.type = "button";
+    remove.addEventListener("click", () => {
+      state.cart.splice(index, 1);
+      renderCart();
+    });
+
+    actions.append(minus, plus, remove);
+    row.append(actions);
+    container.append(row);
   });
 
-  setText("cart-subtotal", price(
-    cart.reduce((sum, item) => sum + item.price * item.cartQuantity, 0)
-  ));
+  if ($("cart-subtotal")) {
+    $("cart-subtotal").textContent = `Subtotal: ${formatKES(subtotal)}`;
+  }
 }
 
-function changeCart(id, amount) {
-  const item = cart.find(row => String(row.id) === String(id));
-  if (!item) return;
+function setupCart() {
+  $("clear-cart-button")?.addEventListener("click", () => {
+    state.cart = [];
+    renderCart();
+    setStatus("cart-status", "Cart cleared.");
+  });
 
-  const next = item.cartQuantity + amount;
-  if (next <= 0) return removeCart(id);
-  if (next > item.quantity) return toast("That exceeds the listed quantity.");
-
-  item.cartQuantity = next;
-  saveCart();
-  renderCart();
-}
-
-function removeCart(id) {
-  cart = cart.filter(item => String(item.id) !== String(id));
-  saveCart();
-  renderCart();
-}
-
-function contactCartSellers() {
-  if (!cart.length) return toast("Your cart is empty.");
-
-  const phone = normalizePhone(cart.find(item => normalizePhone(item.phone))?.phone);
-  if (!phone) return status("cart-status", "No valid seller phone number was found.", true);
-
-  const items = cart
-    .filter(item => normalizePhone(item.phone) === phone)
-    .map(item => `${item.product_name} x ${item.cartQuantity}`)
-    .join(", ");
-
-  status(
-    "cart-status",
-    "Confirm stock, delivery, final price and payment directly with the seller. No payment has been taken."
-  );
-
-  window.open(
-    `https://wa.me/${phone}?text=${encodeURIComponent("Hello, I am enquiring about: " + items)}`,
-    "_blank",
-    "noopener,noreferrer"
-  );
-}
-
-/* -------------------- PRODUCT PHOTOS -------------------- */
-
-function setupPhotoPreview() {
-  const input = $("#product-photo");
-  if (!input) return;
-
-  input.addEventListener("change", () => {
-    const file = input.files?.[0];
-    const preview = $("#photo-preview");
-    if (!file) return;
-
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      input.value = "";
-      return toast("Choose a JPG, PNG or WebP image.");
+  $("place-order-button")?.addEventListener("click", () => {
+    if (!state.user) {
+      openAuth("login", "Sign in to continue.");
+      return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      input.value = "";
-      return toast("Choose an image smaller than 5 MB.");
+    if (!state.cart.length) {
+      setStatus("cart-status", "Add a product before continuing.", true);
+      return;
     }
 
-    if (preview) {
-      preview.replaceChildren();
-      const image = makeElement("img");
-      image.src = URL.createObjectURL(file);
-      image.alt = "Listing photo preview";
-      image.style.maxWidth = "100%";
-      image.style.maxHeight = "220px";
-      preview.appendChild(image);
-      preview.hidden = false;
+    setStatus(
+      "cart-status",
+      "Your cart is ready. Contact each seller to confirm availability, delivery and payment. No payment has been taken."
+    );
+  });
+
+  $("details-add-cart")?.addEventListener("click", () => {
+    if (state.selectedProduct) addToCart(state.selectedProduct);
+  });
+
+  $("details-message-farmer")?.addEventListener("click", () => {
+    if (!state.user) {
+      openAuth("login", "Sign in to message this seller.");
+      return;
     }
+
+    const farmerId = state.selectedProduct && getProductOwnerId(state.selectedProduct);
+    if (!farmerId) {
+      setStatus("message-status", "This listing does not have a seller account ID.", true);
+      showPage("messages-page");
+      return;
+    }
+
+    startConversation(farmerId);
   });
 }
 
-async function uploadPhoto(file) {
-  if (!file) return "";
+/* -------------------- FARMER LISTINGS -------------------- */
+
+function setupCategoryDropdowns() {
+  const department = $("product-category");
+  const subcategory = $("product-subcategory");
+  if (!department || !subcategory) return;
+
+  const updateSubcategories = () => {
+    const options = CATEGORY_MAP[department.value] || [];
+    subcategory.replaceChildren();
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Choose a category";
+    subcategory.append(placeholder);
+
+    options.forEach((name) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      subcategory.append(option);
+    });
+  };
+
+  department.addEventListener("change", updateSubcategories);
+}
+
+async function uploadProductPhoto(file) {
+  if (!file) return null;
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("Choose a JPG, PNG or WebP image.");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("The photo must be 5 MB or smaller.");
+  }
 
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const safeExtension = /^[a-z0-9]+$/.test(extension) ? extension : "jpg";
-  const path = `${currentUser.id}/${crypto.randomUUID()}.${safeExtension}`;
+  const safeExtension = ["jpg", "jpeg", "png", "webp"].includes(extension)
+    ? extension
+    : "jpg";
+
+  const path = `${state.user.id}/${crypto.randomUUID()}.${safeExtension}`;
 
   const { error } = await supabase.storage
     .from("product-photos")
@@ -926,571 +914,464 @@ async function uploadPhoto(file) {
 
   if (error) throw error;
 
-  return supabase.storage.from("product-photos").getPublicUrl(path).data.publicUrl;
+  const { data } = supabase.storage
+    .from("product-photos")
+    .getPublicUrl(path);
+
+  return data.publicUrl;
 }
 
-/* -------------------- PUBLISH LISTING -------------------- */
+function setupProductForm() {
+  $("product-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-async function handleProductSubmit(event) {
-  event.preventDefault();
-
-  if (!currentUser) return toast("Sign in first.");
-  if (userRole() !== "farmer") {
-    return status("farmer-status", "Only farmer accounts can publish listings.", true);
-  }
-
-  const department = value("product-category");
-  const category = value("product-subcategory");
-  const name = value("product-name");
-  const priceValue = Number(value("product-price"));
-  const quantity = Number(value("product-quantity"));
-
-  if (!department || !category || !name) {
-    return status("farmer-status", "Choose a department, category and product name.", true);
-  }
-
-  if (!Number.isFinite(priceValue) || priceValue < 0 ||
-      !Number.isFinite(quantity) || quantity <= 0) {
-    return status("farmer-status", "Enter a valid price and quantity.", true);
-  }
-
-  const button = $("#publish-button");
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Publishing...";
-  }
-
-  try {
-    const photo = await uploadPhoto($("#product-photo")?.files?.[0]);
-
-    const extra = $$("[data-extra-field]").map(input => {
-      const label = input.closest(".form-field")?.querySelector("label")?.textContent;
-      return input.value ? `${label || input.id}: ${input.value}` : "";
-    }).filter(Boolean).join("\n");
-
-    const description = [
-      `Department: ${department}`,
-      value("product-description"),
-      extra
-    ].filter(Boolean).join("\n\n");
-
-    const listing = {
-      owner_id: currentUser.id,
-      product_name: name,
-      category,
-      price: priceValue,
-      quantity,
-      unit: value("product-unit") || "item",
-      condition: value("product-condition") || "Good",
-      county: value("product-county"),
-      town: value("product-town"),
-      farmer_name: userName(),
-      phone: currentProfile?.phone || currentUser.user_metadata?.phone || "",
-      photo_url: photo,
-      description
-    };
-
-    const { error } = await supabase.from("listings").insert(listing);
-    if (error) throw error;
-
-    $("#product-form")?.reset();
-    if ($("#photo-preview")) {
-      $("#photo-preview").replaceChildren();
-      $("#photo-preview").hidden = true;
+    if (!state.user) {
+      openAuth("login", "Sign in before publishing a listing.");
+      return;
     }
 
-    $("#dynamic-product-fields")?.replaceChildren();
-    updateSubcategories();
+    const name = $("product-name")?.value.trim();
+    const category = $("product-category")?.value;
+    const subcategory = $("product-subcategory")?.value;
+    const price = Number($("product-price")?.value);
+    const quantity = Number($("product-quantity")?.value);
+    const unit = $("product-unit")?.value;
+    const county = $("product-county")?.value;
+    const town = $("product-town")?.value.trim();
+    const phone = $("product-phone")?.value.trim();
+    const description = $("product-description")?.value.trim();
+    const condition = $("product-condition")?.value || "new";
+    const file = $("product-photo")?.files?.[0] || null;
 
-    status("farmer-status", "Listing published successfully.");
-    toast("Your listing is live.");
-
-    await loadListings();
-    await loadFarmerListings();
-  } catch (error) {
-    console.error("Publish error:", error);
-    status(
-      "farmer-status",
-      `Could not publish listing: ${error.message || "Unknown error"}`,
-      true
-    );
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = "Publish Product";
+    if (!name || !category || !subcategory || !unit || !county || !description) {
+      setStatus("product-form-status", "Complete all required fields.", true);
+      return;
     }
-  }
-}
 
-/* -------------------- FARMER LISTINGS -------------------- */
+    if (!Number.isFinite(price) || price < 0 || !Number.isFinite(quantity) || quantity < 0) {
+      setStatus("product-form-status", "Enter a valid price and quantity.", true);
+      return;
+    }
 
-async function loadFarmerListings() {
-  const container = $("#farmer-listings");
-  if (!container || !currentUser) return;
+    const submitButton = $("product-form").querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.dataset.originalText = submitButton.textContent;
+      submitButton.textContent = "Publishing...";
+    }
 
-  container.replaceChildren();
+    try {
+      const photoUrl = await uploadProductPhoto(file);
 
-  const { data, error } = await supabase
-    .from("listings")
-    .select("*")
-    .eq("owner_id", currentUser.id)
-    .order("created_at", { ascending: false });
+      const listing = {
+        owner_id: state.user.id,
+        product_name: name,
+        category,
+        subcategory,
+        price,
+        quantity,
+        unit,
+        condition,
+        county,
+        town,
+        farmer_name: state.profile?.name || state.user.user_metadata?.name || "",
+        phone,
+        photo_url: photoUrl,
+        description
+      };
 
-  if (error) {
-    console.error(error);
-    return status("farmer-status", "Could not load your listings.", true);
-  }
+      const { error } = await supabase.from("products").insert(listing);
+      if (error) throw error;
 
-  if (!data?.length) {
-    container.appendChild(makeElement("p", "muted", "You have not published listings yet."));
-    return;
-  }
-
-  data.forEach(item => {
-    const row = makeElement("article", "farmer-listing");
-    const details = makeElement("div");
-
-    details.append(
-      makeElement("strong", "", item.product_name),
-      makeElement("p", "", `${item.category} · ${price(item.price)}`),
-      makeElement("small", "", item.county || "Location not set")
-    );
-
-    const remove = makeButton("Delete", "button button-outline", async () => {
-      if (!window.confirm(`Delete "${item.product_name}"?`)) return;
-
-      const { error: deleteError } = await supabase
-        .from("listings")
-        .delete()
-        .eq("id", item.id)
-        .eq("owner_id", currentUser.id);
-
-      if (deleteError) {
-        console.error(deleteError);
-        return toast("Could not delete listing.");
+      $("product-form").reset();
+      setStatus("product-form-status", "Listing submitted successfully.");
+      await loadProducts();
+      showPage("market-page");
+    } catch (error) {
+      setStatus(
+        "product-form-status",
+        `Listing could not be saved: ${error.message || "Unknown error"}. Check the products table columns and Storage policies in Supabase.`,
+        true
+      );
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = submitButton.dataset.originalText || "Publish listing";
       }
-
-      toast("Listing deleted.");
-      await loadListings();
-      await loadFarmerListings();
-    });
-
-    row.append(details, remove);
-    container.appendChild(row);
+    }
   });
 }
 
-/* -------------------- DIRECT MESSAGING -------------------- */
-
-function stopMessaging() {
-  if (messageChannel) {
-    supabase.removeChannel(messageChannel);
-    messageChannel = null;
-  }
-
-  if (messageRefreshTimer) {
-    clearInterval(messageRefreshTimer);
-    messageRefreshTimer = null;
-  }
-}
+/* -------------------- MESSAGING -------------------- */
 
 async function loadConversations() {
-  const container = $("#conversation-list");
-  if (!container || !currentUser) return;
+  const list = $("conversation-list");
+  if (!list) return;
 
-  stopMessaging();
-  container.replaceChildren();
+  list.replaceChildren();
 
-  const { data: memberships, error } = await supabase
-    .from("conversation_participants")
-    .select("conversation_id")
-    .eq("user_id", currentUser.id);
-
-  if (error) {
-    console.error(error);
-    return status("messages-status", "Could not load conversations. Check Supabase permissions.", true);
-  }
-
-  const ids = [...new Set((memberships || []).map(row => row.conversation_id))];
-
-  if (!ids.length) {
-    container.appendChild(makeElement(
-      "p", "muted",
-      "No conversations yet. Open a listing and choose Message seller."
-    ));
-    status("messages-status", "");
+  if (!state.user) {
+    list.append(createElement("p", "", "Sign in to access your messages."));
     return;
   }
-
-  const [conversationResult, participantResult] = await Promise.all([
-    supabase.from("conversations").select("*").in("id", ids).order("updated_at", { ascending: false }),
-    supabase.from("conversation_participants").select("conversation_id,user_id").in("conversation_id", ids)
-  ]);
-
-  if (conversationResult.error || participantResult.error) {
-    console.error(conversationResult.error || participantResult.error);
-    return status("messages-status", "Could not load conversation details.", true);
-  }
-
-  const conversations = conversationResult.data || [];
-  const participants = participantResult.data || [];
-  const otherIds = [...new Set(participants
-    .filter(row => row.user_id !== currentUser.id)
-    .map(row => row.user_id))];
-
-  let profiles = [];
-
-  if (otherIds.length) {
-    const result = await supabase
-      .from(profileTable)
-      .select("id,name")
-      .in("id", otherIds);
-
-    if (!result.error) profiles = result.data || [];
-  }
-
-  conversations.forEach(conversation => {
-    const others = participants.filter(row =>
-      row.conversation_id === conversation.id && row.user_id !== currentUser.id
-    );
-
-    const names = others.map(person =>
-      profiles.find(profile => profile.id === person.user_id)?.name || "Marketplace member"
-    );
-
-    container.appendChild(makeButton(
-      names.join(", ") || "Conversation",
-      "conversation-item",
-      () => openConversation(conversation.id, names.join(", ") || "Conversation")
-    ));
-  });
-
-  status("messages-status", "");
-}
-
-async function startConversation(listing) {
-  if (!currentUser) {
-    toast("Sign in to message a seller.");
-    showAuth();
-    return;
-  }
-
-  if (!listing?.owner_id) return toast("This listing has no linked seller account.");
-  if (listing.owner_id === currentUser.id) return toast("This is your own listing.");
-
-  status("messages-status", "Opening conversation...");
 
   try {
-    // Reuse an existing conversation only if it has exactly these two members.
-    const { data: mine, error: mineError } = await supabase
+    const { data: memberships, error } = await supabase
       .from("conversation_participants")
       .select("conversation_id")
-      .eq("user_id", currentUser.id);
+      .eq("user_id", state.user.id);
 
-    if (mineError) throw mineError;
+    if (error) throw error;
 
-    const myIds = [...new Set((mine || []).map(row => row.conversation_id))];
-
-    if (myIds.length) {
-      const { data: shared, error: sharedError } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id,user_id")
-        .in("conversation_id", myIds);
-
-      if (sharedError) throw sharedError;
-
-      const grouped = new Map();
-
-      (shared || []).forEach(row => {
-        if (!grouped.has(row.conversation_id)) grouped.set(row.conversation_id, []);
-        grouped.get(row.conversation_id).push(row.user_id);
-      });
-
-      const existingId = [...grouped.entries()].find(([, members]) =>
-        members.length === 2 &&
-        members.includes(currentUser.id) &&
-        members.includes(listing.owner_id)
-      )?.[0];
-
-      if (existingId) {
-        await openConversation(existingId, listing.farmer_name || "Seller");
-        return;
-      }
+    if (!memberships?.length) {
+      list.append(createElement("p", "", "No conversations yet."));
+      return;
     }
 
-    // This RPC securely adds both participants on the database side.
-    const { data: conversationId, error: createError } = await supabase
-      .rpc("create_conversation", { p_other_user: listing.owner_id });
+    for (const membership of memberships) {
+      const { data: conversation } = await supabase
+        .from("conversations")
+        .select("id, updated_at")
+        .eq("id", membership.conversation_id)
+        .maybeSingle();
 
-    if (createError) throw createError;
+      if (!conversation) continue;
 
-    const { error: messageError } = await supabase
-      .from("messages")
-      .insert({
-        conversation_id: conversationId,
-        sender_id: currentUser.id,
-        body: `Hello! I am interested in your listing: ${listing.product_name}.`
-      });
-
-    if (messageError) throw messageError;
-
-    await openConversation(conversationId, listing.farmer_name || "Seller");
+      const button = createElement("button", "sm-secondary", `Conversation ${String(conversation.id).slice(0, 8)}`);
+      button.type = "button";
+      button.addEventListener("click", () => openConversation(conversation.id));
+      list.append(button);
+    }
   } catch (error) {
-    console.error("Start conversation error:", error);
-    status(
-      "messages-status",
-      `Could not start conversation: ${error.message || "Check your Supabase setup."}`,
-      true
-    );
-    showPage("messages");
-  }
-}
-
-async function openConversation(id, title = "Conversation") {
-  if (!currentUser) return;
-
-  activeConversation = id;
-  showPage("messages");
-  setText("conversation-header", title);
-
-  const form = $("#message-form");
-  if (form) form.dataset.conversationId = id;
-
-  await loadMessages(id);
-  stopMessaging();
-
-  messageChannel = supabase
-    .channel(`shamba-chat-${id}`)
-    .on("postgres_changes", {
-      event: "*",
-      schema: "public",
-      table: "messages",
-      filter: `conversation_id=eq.${id}`
-    }, () => {
-      if (activeConversation === id) loadMessages(id);
-    })
-    .subscribe();
-
-  // Backup refresh if Realtime cannot connect.
-  messageRefreshTimer = setInterval(() => {
-    if (activeConversation === id) loadMessages(id);
-  }, 15000);
-}
-
-async function loadMessages(id) {
-  const container = $("#message-list");
-  if (!container || !currentUser) return;
-
-  const { data, error } = await supabase
-    .from("messages")
-    .select("id,conversation_id,sender_id,body,created_at")
-    .eq("conversation_id", id)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error(error);
-    return status("messages-status", "Could not load messages.", true);
-  }
-
-  container.replaceChildren();
-  (data || []).forEach(message => {
-    const mine = message.sender_id === currentUser.id;
-    const bubble = makeElement(
-      "article",
-      `message-bubble ${mine ? "message-mine" : "message-theirs"}`
-    );
-
-    bubble.dataset.messageId = message.id;
-    bubble.appendChild(makeElement("p", "message-text", message.body || ""));
-
-    bubble.appendChild(makeElement(
-      "small",
-      "message-time",
-      message.created_at
-        ? new Date(message.created_at).toLocaleString("en-KE")
-        : ""
+    list.append(createElement(
+      "p",
+      "",
+      `Messages could not be loaded: ${error.message || "Check messaging table permissions."}`
     ));
-
-    container.appendChild(bubble);
-  });
-
-  status("messages-status", "");
-  container.scrollTop = container.scrollHeight;
+  }
 }
 
-async function handleMessageSubmit(event) {
-  event.preventDefault();
-
-  if (!currentUser || !activeConversation) {
-    return status("messages-status", "Open a conversation first.", true);
+async function startConversation(otherUserId) {
+  if (!state.user) {
+    openAuth("login", "Sign in to message a farmer.");
+    return;
   }
 
-  const input = $("#message-input");
-  const body = input?.value?.trim() || "";
-
-  if (!body) return;
-  if (body.length > 4000) {
-    return status("messages-status", "Messages must be 4,000 characters or fewer.", true);
+  if (!otherUserId || otherUserId === state.user.id) {
+    setStatus("message-status", "You cannot message your own account.", true);
+    showPage("messages-page");
+    return;
   }
-
-  const button = $("#send-message-button");
-  if (button) button.disabled = true;
 
   try {
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: activeConversation,
-      sender_id: currentUser.id,
-      body
+    const { data, error } = await supabase.rpc("create_conversation", {
+      p_other_user: otherUserId
     });
 
     if (error) throw error;
 
-    input.value = "";
-    await loadMessages(activeConversation);
-
-    const { error: updateError } = await supabase
-      .from("conversations")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", activeConversation);
-
-    if (updateError) console.warn("Could not update conversation timestamp:", updateError);
+    state.activeFarmerId = otherUserId;
+    await openConversation(data);
+    showPage("messages-page");
   } catch (error) {
-    console.error(error);
-    status("messages-status", `Message failed: ${error.message || "Check permissions."}`, true);
-  } finally {
-    if (button) button.disabled = false;
+    showPage("messages-page");
+    setStatus(
+      "message-status",
+      `Could not start conversation: ${error.message || "Check the create_conversation function and permissions."}`,
+      true
+    );
   }
 }
 
-/* -------------------- ACCOUNT & THEME -------------------- */
+async function openConversation(conversationId) {
+  if (!state.user) return;
 
-function updateAccount() {
-  setText("account-label", userName());
-  setText("farmer-name", userName());
+  state.activeConversationId = conversationId;
+  const thread = $("message-thread");
+  if (!thread) return;
 
-  const farmer = userRole() === "farmer";
+  thread.replaceChildren();
+  setStatus("message-status", "Loading conversation...");
 
-  $$('.nav-link[data-page="farmer"]').forEach(link => {
-    link.hidden = !farmer;
-  });
+  try {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("id, sender_id, body, created_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+      .limit(200);
 
-  $$('[data-page="farmer"]').forEach(element => {
-    if (!element.classList.contains("nav-link")) element.hidden = !farmer;
+    if (error) throw error;
+
+    (data || []).forEach((message) => {
+      const mine = message.sender_id === state.user.id;
+      const bubble = createElement("article", "sm-product-card");
+      bubble.append(
+        createElement("strong", "", mine ? "You" : "Farmer / buyer"),
+        createElement("p", "", message.body),
+        createElement("small", "sm-muted", new Date(message.created_at).toLocaleString())
+      );
+      thread.append(bubble);
+    });
+
+    setStatus("message-status", "");
+
+    if (state.messageSubscription) {
+      supabase.removeChannel(state.messageSubscription);
+      state.messageSubscription = null;
+    }
+
+    state.messageSubscription = supabase
+      .channel(`messages-${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          const message = payload.new;
+          const mine = message.sender_id === state.user?.id;
+          const bubble = createElement("article", "sm-product-card");
+          bubble.append(
+            createElement("strong", "", mine ? "You" : "Farmer / buyer"),
+            createElement("p", "", message.body),
+            createElement("small", "sm-muted", new Date(message.created_at).toLocaleString())
+          );
+          thread.append(bubble);
+        }
+      )
+      .subscribe();
+  } catch (error) {
+    setStatus("message-status", `Could not load messages: ${error.message}`, true);
+  }
+}
+
+function setupMessageForm() {
+  $("message-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!state.user) {
+      openAuth("login", "Sign in to send a message.");
+      return;
+    }
+
+    if (!state.activeConversationId) {
+      setStatus("message-status", "Choose a conversation first.", true);
+      return;
+    }
+
+    const body = $("message-input")?.value.trim();
+    if (!body) return;
+
+    try {
+      const { error } = await supabase.from("messages").insert({
+        conversation_id: state.activeConversationId,
+        sender_id: state.user.id,
+        body
+      });
+
+      if (error) throw error;
+
+      $("message-input").value = "";
+      setStatus("message-status", "Message sent.");
+    } catch (error) {
+      setStatus("message-status", `Message could not be sent: ${error.message}`, true);
+    }
   });
 }
 
-function setupTheme() {
-  const toggle = $("#theme-toggle");
-  if (!toggle) return;
+/* -------------------- ACCOUNT SETTINGS -------------------- */
 
-  const saved = localStorage.getItem("shamba-theme");
-  if (saved === "dark") document.body.classList.add("dark-theme");
+function renderSettings() {
+  if (!state.user) {
+    openAuth("login", "Sign in to manage your account.");
+    return;
+  }
 
-  const refresh = () => {
-    const dark = document.body.classList.contains("dark-theme");
-    toggle.setAttribute("aria-pressed", String(dark));
-    toggle.textContent = dark ? "Light Mode" : "Dark Mode";
-  };
+  if ($("settings-account-name")) {
+    $("settings-account-name").textContent =
+      `Name: ${state.profile?.name || state.user.user_metadata?.name || "Not set"}`;
+  }
 
-  refresh();
+  if ($("settings-account-email")) {
+    $("settings-account-email").textContent = `Email: ${state.user.email || ""}`;
+  }
 
-  toggle.addEventListener("click", () => {
-    document.body.classList.toggle("dark-theme");
-    localStorage.setItem(
-      "shamba-theme",
-      document.body.classList.contains("dark-theme") ? "dark" : "light"
-    );
-    refresh();
+  if ($("settings-name")) {
+    $("settings-name").value =
+      state.profile?.name || state.user.user_metadata?.name || "";
+  }
+
+  if ($("settings-phone")) {
+    $("settings-phone").value = state.profile?.phone || "";
+  }
+}
+
+function setupSettingsForm() {
+  $("settings-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!state.user) {
+      openAuth("login");
+      return;
+    }
+
+    const name = $("settings-name")?.value.trim() || "";
+    const phone = $("settings-phone")?.value.trim() || "";
+
+    try {
+      // Updating user metadata is useful for display, but is not an
+      // authority for admin roles or other permissions.
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { name }
+      });
+      if (authError) throw authError;
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: state.user.id,
+          name,
+          email: state.user.email,
+          phone
+        }, { onConflict: "id" });
+
+      if (profileError) {
+        throw new Error(
+          "Your display name was updated, but the profiles table could not be saved: " +
+          profileError.message
+        );
+      }
+
+      await loadProfile();
+      updateHeader();
+      renderSettings();
+      setStatus("settings-status", "Settings saved.");
+    } catch (error) {
+      setStatus("settings-status", error.message || "Could not save settings.", true);
+    }
   });
 }
 
-async function signOut() {
-  stopMessaging();
+/* -------------------- ADMIN DASHBOARD -------------------- */
 
-  const { error } = await supabase.auth.signOut();
-  if (error) return toast("Could not sign out.");
+async function loadAdminOverview() {
+  if (!state.user || !state.isAdmin) {
+    setStatus("admin-status", "Administrator permission required.", true);
+    return;
+  }
 
-  currentUser = null;
-  currentProfile = null;
-  activeConversation = null;
-  allListings = [];
-  showAuth();
+  const container = $("admin-content");
+  if (!container) return;
+
+  container.replaceChildren(
+    createElement("p", "", `Signed in as ${state.user.email || "administrator"}.`),
+    createElement("p", "", "Administrator role has been verified.")
+  );
+
+  try {
+    const { count, error } = await supabase
+      .from("products")
+      .select("*", { count: "exact", head: true });
+
+    if (error) throw error;
+    container.append(createElement("p", "", `Product records visible to this account: ${count ?? 0}`));
+  } catch (error) {
+    container.append(createElement(
+      "p",
+      "",
+      `Product overview unavailable: ${error.message || "Check database permissions."}`
+    ));
+  }
+}
+
+/* -------------------- NAVIGATION -------------------- */
+
+function setupNavigation() {
+  document.querySelectorAll("[data-page]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const pageId = button.dataset.page;
+      const protectedPage = ["farmer-page", "cart-page", "messages-page", "settings-page"];
+
+      if (protectedPage.includes(pageId) && !state.user) {
+        openAuth("login", "Sign in to use this feature.");
+        return;
+      }
+
+      showPage(pageId);
+    });
+  });
+
+  $("browse-public-button")?.addEventListener("click", () => showPage("market-page"));
+  $("back-to-auth")?.addEventListener("click", () => openAuth("login"));
+
+  $("show-admin-login")?.addEventListener("click", () => {
+    document.querySelectorAll(".app-page").forEach((page) => {
+      page.hidden = page.id !== "admin-login-page";
+    });
+    if ($("admin-login-status")) $("admin-login-status").textContent = "";
+  });
 }
 
 /* -------------------- STARTUP -------------------- */
 
 async function startApp() {
-  if ($("#auth-page")) $("#auth-page").hidden = true;
-  if ($("#app-shell")) $("#app-shell").hidden = false;
-
-  updateAccount();
-  await loadListings();
-  showPage(userRole() === "farmer" ? "farmer" : "market");
-}
-
-function setupEvents() {
-  $("#auth-form")?.addEventListener("submit", handleAuth);
-
-  $("#show-login")?.addEventListener("click", event => {
-    event.preventDefault();
-    setAuthMode("login");
-  });
-
-  $("#show-signup")?.addEventListener("click", event => {
-    event.preventDefault();
-    setAuthMode("signup");
-  });
-
-  $("#logout-button")?.addEventListener("click", signOut);
-  $("#settings-logout")?.addEventListener("click", signOut);
-  $("#product-form")?.addEventListener("submit", handleProductSubmit);
-  $("#message-form")?.addEventListener("submit", handleMessageSubmit);
-
-  setupNavigation();
+  setupAuthTabs();
+  setupRecoveryEvents();
   setupMarketFilters();
-  setupPhotoPreview();
-  setupTheme();
-  setupCountyFilter();
-}
+  setupCart();
+  setupCategoryDropdowns();
+  setupProductForm();
+  setupMessageForm();
+  setupSettingsForm();
+  setupNavigation();
 
-async function init() {
-  setText("current-year", new Date().getFullYear());
+  // Populate county options while preserving the default selection.
+  const countyFilter = $("county-filter");
+  if (countyFilter) {
+    const existing = countyFilter.value;
+    COUNTY_NAMES.forEach((county) => {
+      const exists = [...countyFilter.options].some(
+        (option) => option.value.toLowerCase() === county.toLowerCase()
+      );
 
-  setupCategories();
-  setupEvents();
-  loadCart();
-  setText("cart-count", cart.reduce((sum, item) => sum + item.cartQuantity, 0));
-
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-
-    currentUser = data.session?.user || null;
-
-    if (currentUser) {
-      currentProfile = await getProfile(currentUser);
-      await startApp();
-    } else {
-      showAuth();
-    }
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT") {
-        currentUser = null;
-        currentProfile = null;
-        activeConversation = null;
-        showAuth();
+      if (!exists) {
+        const option = document.createElement("option");
+        option.value = county;
+        option.textContent = county;
+        countyFilter.append(option);
       }
     });
-  } catch (error) {
-    console.error("Startup error:", error);
-    showAuth();
-    status(
-      "auth-status",
-      `Connection problem: ${error.message || "Check Supabase settings."}`,
-      true
-    );
+    countyFilter.value = existing;
+  }
+
+  await refreshAuthState();
+  await loadProducts();
+  renderCart();
+  updateHeader();
+
+  // Password recovery links may return with an auth token in the URL.
+  const hash = window.location.hash;
+  if (hash.includes("type=recovery")) {
+    showPage("auth-page");
+    if ($("auth-form")) $("auth-form").hidden = true;
+    if ($("recovery-panel")) $("recovery-panel").hidden = true;
+    if ($("new-password-panel")) $("new-password-panel").hidden = false;
+  } else if (state.user) {
+    await checkAdminRole();
+  } else {
+    showPage("market-page");
   }
 }
 
-init();
+startApp().catch((error) => {
+  console.error("ShambaMarket could not start:", error);
+  const status = $("market-status");
+  if (status) {
+    status.textContent =
+      "ShambaMarket could not initialise. Check supabase-config.js and refresh the page.";
+  }
+});
