@@ -6,15 +6,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#667744">
   <meta name="description" content="Discover fresh produce listed by farmers across Kenya.">
+
   <title>SHAMBAMARKET | Kenyan Farm Marketplace</title>
+
   <link rel="stylesheet" href="design.css">
   <link rel="stylesheet" href="soko.css">
   <link rel="stylesheet" href="shamba.css">
   <link rel="stylesheet" href="mobile.css">
+
   <script type="module" src="app.js"></script>
 </head>
+
 <body>
+
+  <!-- HEADER -->
   <header class="site-header">
+
     <a class="brand" href="#" id="home-link">
       <span class="brand-mark">SM</span>
       <span>
@@ -24,260 +31,801 @@
     </a>
 
     <nav id="main-nav" class="main-nav" hidden>
-      <button data-page="market" class="nav-link active">Marketplace</button>
-      <button data-page="farmer" class="nav-link">Farmer dashboard</button>
-      <button data-page="settings" class="nav-link">Settings</button>
+      <button data-page="market" class="nav-link active">
+        Marketplace
+      </button>
+
+      <button data-page="farmer" class="nav-link">
+        Farmer dashboard
+      </button>
+
+      <button data-page="settings" class="nav-link">
+        Settings
+      </button>
     </nav>
 
     <div class="header-account">
       <span id="account-label"></span>
-      <button id="logout-button" class="button button-outline" hidden>Log out</button>
+
+      <button
+        id="logout-button"
+        class="button button-outline"
+        hidden
+      >
+        Log out
+      </button>
     </div>
+
   </header>
 
   <main>
-    <!-- LOGIN AND SIGN-UP: shown before the marketplace -->
+
+    <!-- LOGIN AND SIGN-UP -->
     <section id="auth-page" class="auth-page">
+
+      <!-- LOGIN PHOTO SLIDESHOW -->
       <div class="auth-photo">
-        <div class="auth-photo-copy">
-          <p class="eyebrow light-eyebrow">GROWN IN KENYA</p>
-          <h1>From our farms<br>to your market.</h1>
-          <p>Discover produce from farmers across Kenya, or bring your own harvest to more customers.</p>
+
+        <div class="auth-slides" aria-hidden="true">
+
+          <img
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1500&q=85"
+            alt=""
+            fetchpriority="high"
+          >
+
+          <img
+            src="https://images.unsplash.com/photo-1499529112087-3cb3b73b6cfd?auto=format&fit=crop&w=1500&q=85"
+            alt=""
+            loading="eager"
+          >
+
+          <img
+            src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1500&q=85"
+            alt=""
+            loading="eager"
+          >
+
         </div>
+
+        <div class="auth-photo-copy">
+
+          <p class="eyebrow light-eyebrow">
+            GROWN IN KENYA
+          </p>
+
+          <h1>
+            From our farms<br>
+            to your market.
+          </h1>
+
+          <p>
+            Discover produce from farmers across Kenya,
+            or bring your own harvest to more customers.
+          </p>
+
+        </div>
+
       </div>
 
+      <!-- AUTHENTICATION PANEL -->
       <div class="auth-panel">
-        <p class="eyebrow">WELCOME TO SHAMBAMARKET</p>
-        <h2 id="auth-title">Welcome back</h2>
-        <p id="auth-description" class="muted">Log in to explore the marketplace.</p>
 
+        <p class="eyebrow">
+          WELCOME TO SHAMBAMARKET
+        </p>
+
+        <h2 id="auth-title">
+          Welcome back
+        </h2>
+
+        <p id="auth-description" class="muted">
+          Log in to explore the marketplace.
+        </p>
+
+        <!-- LOGIN / SIGN-UP SWITCH -->
         <div class="auth-switch">
-          <button type="button" id="show-login" class="auth-tab active">Log in</button>
-          <button type="button" id="show-signup" class="auth-tab">Sign up</button>
+
+          <button
+            type="button"
+            id="show-login"
+            class="auth-tab active"
+          >
+            Log in
+          </button>
+
+          <button
+            type="button"
+            id="show-signup"
+            class="auth-tab"
+          >
+            Sign up
+          </button>
+
         </div>
 
         <form id="auth-form">
+
+          <!-- SIGN-UP FIELDS -->
           <div id="signup-fields" hidden>
+
             <div class="form-field">
-              <label for="auth-name">Your name</label>
-              <input id="auth-name" type="text" maxlength="80" autocomplete="name">
+              <label for="auth-name">
+                Your name
+              </label>
+
+              <input
+                id="auth-name"
+                type="text"
+                maxlength="80"
+                autocomplete="name"
+              >
             </div>
+
             <div class="form-field">
-              <label for="auth-role">Account type</label>
+              <label for="auth-role">
+                Account type
+              </label>
+
               <select id="auth-role">
                 <option value="customer">Customer</option>
                 <option value="farmer">Farmer</option>
               </select>
             </div>
+
           </div>
 
+          <!-- EMAIL -->
           <div class="form-field">
-            <label for="auth-email">Email address</label>
-            <input id="auth-email" type="email" required autocomplete="email" placeholder="you@example.com">
+
+            <label for="auth-email">
+              Email address
+            </label>
+
+            <input
+              id="auth-email"
+              type="email"
+              required
+              autocomplete="email"
+              placeholder="you@example.com"
+            >
+
           </div>
 
+          <!-- PASSWORD -->
           <div class="form-field">
-            <label for="auth-password">Password</label>
-            <input id="auth-password" type="password" required minlength="6" autocomplete="current-password" placeholder="At least 6 characters">
+
+            <label for="auth-password">
+              Password
+            </label>
+
+            <input
+              id="auth-password"
+              type="password"
+              required
+              minlength="6"
+              autocomplete="current-password"
+              placeholder="At least 6 characters"
+            >
+
           </div>
 
-          <button id="auth-submit" class="button button-primary button-wide" type="submit">Log in</button>
-          <p id="auth-status" class="status-message" role="status" aria-live="polite"></p>
+          <button
+            id="auth-submit"
+            class="button button-primary button-wide"
+            type="submit"
+          >
+            Log in
+          </button>
+
+          <p
+            id="auth-status"
+            class="status-message"
+            role="status"
+            aria-live="polite"
+          ></p>
+
         </form>
-        <p class="small-text">Use a valid email you can access. Keep your password private.</p>
+
+        <p class="small-text">
+          Use a valid email you can access. Keep your password private.
+        </p>
+
       </div>
+
     </section>
 
-    <!-- APP CONTENT: hidden until Firebase confirms login -->
+    <!-- MARKETPLACE APP -->
     <div id="app-shell" hidden>
+
+      <!-- MARKETPLACE PAGE -->
       <section id="market-page" class="app-page active">
+
+        <!-- HERO -->
         <section class="hero">
+
           <div class="hero-copy">
-            <p class="eyebrow">A MARKET BUILT AROUND FARMERS</p>
-            <h1>Good produce.<br><span>Closer to home.</span></h1>
-            <p>Discover farm produce listed by independent farmers. Compare prices, locations and available quantities.</p>
+
+            <p class="eyebrow">
+              A MARKET BUILT AROUND FARMERS
+            </p>
+
+            <h1>
+              Good produce.<br>
+              <span>Closer to home.</span>
+            </h1>
+
+            <p>
+              Discover farm produce listed by independent farmers.
+              Compare prices, locations and available quantities.
+            </p>
+
             <div class="hero-actions">
-              <button id="browse-button" class="button button-primary">Browse produce</button>
-              <button id="sell-button" class="button button-light">List your produce</button>
+
+              <button
+                id="browse-button"
+                class="button button-primary"
+              >
+                Browse produce
+              </button>
+
+              <button
+                id="sell-button"
+                class="button button-light"
+              >
+                List your produce
+              </button>
+
             </div>
+
           </div>
-          <div class="hero-photo" role="img" aria-label="Photograph of fresh produce at a market"></div>
+
+          <div
+            class="hero-photo"
+            role="img"
+            aria-label="Fresh produce at a market"
+          ></div>
+
         </section>
 
+        <!-- PRODUCT LISTINGS -->
         <section id="marketplace" class="content-section">
+
           <div class="section-heading">
+
             <div>
-              <p class="eyebrow">FRESH FROM THE FARM</p>
+
+              <p class="eyebrow">
+                FRESH FROM THE FARM
+              </p>
+
               <h2>Explore listings</h2>
-              <p>Different farmers can list the same product with different prices and quantities.</p>
+
+              <p>
+                Different farmers can list the same product
+                with different prices and quantities.
+              </p>
+
             </div>
+
           </div>
 
+          <!-- SEARCH, COUNTY AND SORT -->
           <div class="market-tools">
+
             <div class="form-field">
-              <label for="search-input">Search products or sellers</label>
-              <input id="search-input" type="search" placeholder="Tomatoes, maize, farmer name...">
+
+              <label for="search-input">
+                Search products or sellers
+              </label>
+
+              <input
+                id="search-input"
+                type="search"
+                placeholder="Tomatoes, maize, farmer name..."
+              >
+
             </div>
+
             <div class="form-field">
-              <label for="county-filter">County</label>
+
+              <label for="county-filter">
+                County
+              </label>
+
               <select id="county-filter">
+
                 <option value="">All counties</option>
-                <option>Baringo</option><option>Bomet</option>
-                <option>Bungoma</option><option>Busia</option>
-                <option>Embu</option><option>Kiambu</option>
-                <option>Kisii</option><option>Kisumu</option>
-                <option>Machakos</option><option>Makueni</option>
-                <option>Meru</option><option>Nairobi</option>
-                <option>Nakuru</option><option>Narok</option>
-                <option>Nyandarua</option><option>Nyeri</option>
-                <option>Uasin Gishu</option><option>Other</option>
+                <option>Baringo</option>
+                <option>Bomet</option>
+                <option>Bungoma</option>
+                <option>Busia</option>
+                <option>Embu</option>
+                <option>Kiambu</option>
+                <option>Kisii</option>
+                <option>Kisumu</option>
+                <option>Machakos</option>
+                <option>Makueni</option>
+                <option>Meru</option>
+                <option>Nairobi</option>
+                <option>Nakuru</option>
+                <option>Narok</option>
+                <option>Nyandarua</option>
+                <option>Nyeri</option>
+                <option>Uasin Gishu</option>
+                <option>Other</option>
+
               </select>
+
             </div>
+
             <div class="form-field">
-              <label for="sort-products">Sort by</label>
+
+              <label for="sort-products">
+                Sort by
+              </label>
+
               <select id="sort-products">
+
                 <option value="newest">Recently listed</option>
                 <option value="price-low">Lowest price</option>
                 <option value="price-high">Highest price</option>
                 <option value="name">Product name</option>
+
               </select>
+
             </div>
+
           </div>
 
+          <!-- PRODUCT CATEGORIES -->
           <div class="category-section">
+
             <h3>Browse categories</h3>
-            <p class="muted category-help">Cereals include maize, wheat, rice, sorghum, millet and barley. Grains is kept as a separate listing category for other grain and seed products such as sesame and amaranth.</p>
-            <div id="category-list" class="category-list"></div>
+
+            <p class="muted category-help">
+              Explore fruits, vegetables, nuts, starchy foods,
+              grains, cereals, legumes, spices and herbal products.
+              Choose a category to find matching farmer listings.
+            </p>
+
+            <div
+              id="category-list"
+              class="category-list"
+            ></div>
+
           </div>
 
-          <p id="listing-summary" class="listing-summary" aria-live="polite"></p>
-          <div id="product-list" class="product-list"></div>
-          <div id="empty-message" class="empty-message" hidden>
+          <!-- LISTING RESULTS -->
+          <p
+            id="listing-summary"
+            class="listing-summary"
+            aria-live="polite"
+          ></p>
+
+          <div
+            id="product-list"
+            class="product-list"
+          ></div>
+
+          <div
+            id="empty-message"
+            class="empty-message"
+            hidden
+          >
+
             <h3>No matching listings</h3>
-            <p>Try another search or category.</p>
+
+            <p>
+              Try another search or category.
+            </p>
+
           </div>
-          <p id="market-status" class="status-message" role="status"></p>
+
+          <p
+            id="market-status"
+            class="status-message"
+            role="status"
+          ></p>
+
         </section>
+
       </section>
 
-      <section id="farmer-page" class="app-page" hidden>
+      <!-- FARMER DASHBOARD -->
+      <section
+        id="farmer-page"
+        class="app-page"
+        hidden
+      >
+
         <section class="page-banner">
-          <p class="eyebrow">YOUR FARM BUSINESS</p>
+
+          <p class="eyebrow">
+            YOUR FARM BUSINESS
+          </p>
+
           <h1>Farmer dashboard</h1>
-          <p>Create a separate listing for each product or batch you want to sell.</p>
+
+          <p>
+            Create a separate listing for each product
+            or batch you want to sell.
+          </p>
+
         </section>
 
         <section class="content-section two-column">
+
+          <!-- CREATE LISTING -->
           <div class="panel">
+
             <h2>List your produce</h2>
-            <p class="muted">Upload a real photo of the produce you are selling.</p>
+
+            <p class="muted">
+              Upload a real photo of the produce you are selling.
+            </p>
 
             <form id="product-form">
+
               <div class="form-grid">
+
                 <div class="form-field">
-                  <label for="product-name">Product name *</label>
-                  <input id="product-name" required maxlength="90" placeholder="e.g. Maize">
+
+                  <label for="product-name">
+                    Product name *
+                  </label>
+
+                  <input
+                    id="product-name"
+                    required
+                    maxlength="90"
+                    placeholder="e.g. Maize"
+                  >
+
                 </div>
+
                 <div class="form-field">
-                  <label for="product-category">Category *</label>
-                  <select id="product-category" required></select>
+
+                  <label for="product-category">
+                    Category *
+                  </label>
+
+                  <select
+                    id="product-category"
+                    required
+                  ></select>
+
                 </div>
+
                 <div class="form-field">
-                  <label for="product-condition">Condition *</label>
-                  <select id="product-condition" required>
+
+                  <label for="product-condition">
+                    Condition *
+                  </label>
+
+                  <select
+                    id="product-condition"
+                    required
+                  >
+
                     <option value="Fresh">Fresh</option>
                     <option value="Dried">Dried</option>
                     <option value="Processed">Processed</option>
+
                   </select>
+
                 </div>
+
                 <div class="form-field">
-                  <label for="product-county">County *</label>
-                  <input id="product-county" required placeholder="e.g. Nakuru">
+
+                  <label for="product-county">
+                    County *
+                  </label>
+
+                  <input
+                    id="product-county"
+                    required
+                    placeholder="e.g. Nakuru"
+                  >
+
                 </div>
+
                 <div class="form-field">
-                  <label for="product-town">Town or area *</label>
-                  <input id="product-town" required placeholder="e.g. Naivasha">
+
+                  <label for="product-town">
+                    Town or area *
+                  </label>
+
+                  <input
+                    id="product-town"
+                    required
+                    placeholder="e.g. Naivasha"
+                  >
+
                 </div>
+
                 <div class="form-field">
-                  <label for="product-quantity">Quantity available *</label>
-                  <input id="product-quantity" type="number" min="0.1" step="any" required>
+
+                  <label for="product-quantity">
+                    Quantity available *
+                  </label>
+
+                  <input
+                    id="product-quantity"
+                    type="number"
+                    min="0.1"
+                    step="any"
+                    required
+                  >
+
                 </div>
+
                 <div class="form-field">
-                  <label for="product-unit">Unit *</label>
-                  <select id="product-unit" required>
+
+                  <label for="product-unit">
+                    Unit *
+                  </label>
+
+                  <select
+                    id="product-unit"
+                    required
+                  >
+
                     <option value="kg">Kilograms (kg)</option>
                     <option value="bag">Bags</option>
                     <option value="crate">Crates</option>
                     <option value="piece">Pieces</option>
                     <option value="bunch">Bunches</option>
                     <option value="litre">Litres</option>
+
                   </select>
+
                 </div>
+
                 <div class="form-field">
-                  <label for="product-price">Price in KSh per unit *</label>
-                  <input id="product-price" type="number" min="0" step="any" required>
+
+                  <label for="product-price">
+                    Price in KSh per unit *
+                  </label>
+
+                  <input
+                    id="product-price"
+                    type="number"
+                    min="0"
+                    step="any"
+                    required
+                  >
+
                 </div>
+
                 <div class="form-field">
-                  <label for="farmer-name">Farmer or business name *</label>
-                  <input id="farmer-name" required maxlength="100">
+
+                  <label for="farmer-name">
+                    Farmer or business name *
+                  </label>
+
+                  <input
+                    id="farmer-name"
+                    required
+                    maxlength="100"
+                  >
+
                 </div>
+
                 <div class="form-field">
-                  <label for="farmer-phone">Contact phone *</label>
-                  <input id="farmer-phone" type="tel" required placeholder="e.g. 07XXXXXXXX">
+
+                  <label for="farmer-phone">
+                    Contact phone *
+                  </label>
+
+                  <input
+                    id="farmer-phone"
+                    type="tel"
+                    required
+                    placeholder="e.g. 07XXXXXXXX"
+                  >
+
                 </div>
+
+                <!-- PRODUCT PHOTO -->
                 <div class="form-field full-width">
-                  <label for="product-photo">Product photograph *</label>
-                  <input id="product-photo" type="file" accept="image/jpeg,image/png,image/webp" required>
-                  <small class="field-help">JPG, PNG or WebP. Maximum 5 MB. Upload a genuine photo of your produce.</small>
-                  <div id="photo-preview" class="photo-preview"></div>
+
+                  <label for="product-photo">
+                    Product photograph *
+                  </label>
+
+                  <input
+                    id="product-photo"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    required
+                  >
+
+                  <small class="field-help">
+                    JPG, PNG or WebP. Maximum 5 MB.
+                    Upload a genuine photo of your produce.
+                  </small>
+
+                  <div
+                    id="photo-preview"
+                    class="photo-preview"
+                  ></div>
+
                 </div>
+
+                <!-- DESCRIPTION -->
                 <div class="form-field full-width">
-                  <label for="product-description">Description (optional)</label>
-                  <textarea id="product-description" rows="3" maxlength="700" placeholder="Variety, harvest date, packaging or collection details"></textarea>
+
+                  <label for="product-description">
+                    Description (optional)
+                  </label>
+
+                  <textarea
+                    id="product-description"
+                    rows="3"
+                    maxlength="700"
+                    placeholder="Variety, harvest date, packaging or collection details"
+                  ></textarea>
+
                 </div>
+
               </div>
-              <button id="publish-button" class="button button-primary" type="submit">Publish listing</button>
-              <p id="farmer-status" class="status-message" role="status" aria-live="polite"></p>
+
+              <button
+                id="publish-button"
+                class="button button-primary"
+                type="submit"
+              >
+                Publish listing
+              </button>
+
+              <p
+                id="farmer-status"
+                class="status-message"
+                role="status"
+                aria-live="polite"
+              ></p>
+
             </form>
+
           </div>
 
+          <!-- FARMER'S OWN LISTINGS -->
           <div class="panel">
+
             <h2>Your listings</h2>
-            <p class="muted">Only your own listings can be deleted from this panel.</p>
-            <div id="farmer-listings" class="farmer-listings"></div>
+
+            <p class="muted">
+              Only your own listings can be deleted from this panel.
+            </p>
+
+            <div
+              id="farmer-listings"
+              class="farmer-listings"
+            ></div>
+
           </div>
+
         </section>
+
       </section>
 
-      <section id="settings-page" class="app-page" hidden>
+      <!-- SETTINGS -->
+      <section
+        id="settings-page"
+        class="app-page"
+        hidden
+      >
+
         <section class="page-banner">
-          <p class="eyebrow">YOUR PREFERENCES</p>
+
+          <p class="eyebrow">
+            YOUR PREFERENCES
+          </p>
+
           <h1>Settings</h1>
-          <p>Manage your appearance and account.</p>
+
+          <p>
+            Manage your appearance and account.
+          </p>
+
         </section>
+
         <section class="content-section narrow-section">
+
           <div class="panel settings-panel">
+
+            <!-- APPEARANCE -->
             <div class="setting-item">
-              <div><h2>Appearance</h2><p class="muted">Switch between light and dark mode.</p></div>
-              <button id="theme-toggle" class="button button-outline">Switch theme</button>
+
+              <div>
+
+                <h2>Appearance</h2>
+
+                <p class="muted">
+                  Switch between light and dark mode.
+                </p>
+
+              </div>
+
+              <button
+                id="theme-toggle"
+                class="button button-outline"
+              >
+                Switch theme
+              </button>
+
             </div>
+
+            <!-- ACCOUNT -->
             <div class="setting-item">
-              <div><h2>Account</h2><p class="muted">Your account is managed through Firebase Authentication.</p></div>
-              <button id="settings-logout" class="button button-outline">Log out</button>
+
+              <div>
+
+                <h2>Account</h2>
+
+                <p class="muted">
+                  Manage your account and sign-in settings.
+                </p>
+
+              </div>
+
+              <button
+                id="settings-logout"
+                class="button button-outline"
+              >
+                Log out
+              </button>
+
             </div>
-            <p id="settings-status" class="status-message" role="status"></p>
+
+            <p
+              id="settings-status"
+              class="status-message"
+              role="status"
+            ></p>
+
           </div>
+
         </section>
+
       </section>
+
     </div>
+
   </main>
 
+  <!-- FOOTER -->
   <footer class="site-footer">
-    <div><strong>SHAMBAMARKET</strong><p>Connecting Kenyan farms with local customers.</p></div>
-    <p>Check product details and seller information before making a purchase.</p>
-    <p>© <span id="current-year"></span> SHAMBAMARKET</p>
+
+    <div>
+
+      <strong>SHAMBAMARKET</strong>
+
+      <p>
+        Connecting Kenyan farms with local customers.
+      </p>
+
+    </div>
+
+    <p>
+      Check product details and seller information
+      before making a purchase.
+    </p>
+
+    <p>
+      © <span id="current-year"></span> SHAMBAMARKET
+    </p>
+
   </footer>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <!-- NOTIFICATION TOAST -->
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
+
 </body>
 </html>
